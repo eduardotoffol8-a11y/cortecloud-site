@@ -28,9 +28,9 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
   }, []);
   const offer = countdown(LIFETIME_PROMO_END, now);
   const plans = useMemo(() => [
-    { id: "monthly" as const, name: "Mensal", price: "R$ 9,99", detail: "30 dias de acesso" },
-    { id: "annual" as const, name: "Anual", price: "R$ 99,99", detail: "1 ano de acesso" },
-    { id: "lifetime" as const, name: "Vitalício", price: offer.remaining ? "R$ 149,99" : "R$ 249,99", oldPrice: offer.remaining ? "R$ 249,99" : "", detail: "Pagamento único", highlight: true },
+    { id: "monthly" as const, name: "Mensal", price: "R$ 9,99", detail: "30 dias de acesso · pagamento único" },
+    { id: "annual" as const, name: "Anual", price: "R$ 99,99", detail: "365 dias de acesso · pagamento único" },
+    { id: "lifetime" as const, name: "Vitalício", price: offer.remaining ? "R$ 149,99" : "R$ 249,99", oldPrice: offer.remaining ? "R$ 249,99" : "", detail: "Acesso sem vencimento · pagamento único", highlight: true },
   ], [offer.remaining]);
 
   const choosePlan = async (plan: PlanType) => {
@@ -82,6 +82,7 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
                 </article>
               ))}
             </div>
+            <p className="mt-4 text-center text-xs leading-5 text-[#71817d]">Os pagamentos são avulsos. O OrçaMóvel não faz renovação ou cobrança automática ao fim do período.</p>
             {message && <p role="alert" className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">{message}</p>}
             <div className="mt-5 flex flex-col items-center justify-between gap-3 border-t border-[#e3ebe9] pt-5 sm:flex-row">
               <p className="flex items-center gap-2 text-sm font-semibold text-[#64746f]"><ShieldCheck size={17} className="text-[var(--brand)]" />Pix ou cartão processado pelo Mercado Pago · {email}</p>
