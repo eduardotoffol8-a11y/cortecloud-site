@@ -150,8 +150,10 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     doc.setFillColor(...emerald); doc.roundedRect(margin + 4, y + 5, 10, 8, 2, 2, "F");
     textStyle([255, 255, 255], 8, "bold"); doc.text(String(index + 1).padStart(2, "0"), margin + 9, y + 10.5, { align: "center" });
     textStyle(ink, 10.5, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} - ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 10.5);
-    textStyle(muted, 8.3); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - 47, y + 10.5, { align: "right" });
-    textStyle(emerald, 10.5, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 10.5, { align: "right" });
+    textStyle(muted, 8.3); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - (quote.closing.showItemPrices !== false ? 47 : 4), y + 10.5, { align: "right" });
+    if (quote.closing.showItemPrices !== false) {
+      textStyle(emerald, 10.5, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 10.5, { align: "right" });
+    }
     let rowY = y + 17.5;
     textStyle(muted, 8.7); doc.text(specLines, margin + 5, rowY); rowY += specLines.length * 4 + 2;
     textStyle(ink, 8.5); doc.text(detailLines, margin + 5, rowY);
@@ -160,11 +162,14 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
 
   ensureSpace(40);
   const subtotal = quoteSubtotal(quote), discount = moneyValue(quote.closing.discount), total = quoteTotal(quote);
-  const totalHeight = discount > 0 ? 31 : 25, totalX = pageWidth - margin - 80;
+  const onlyTotal = quote.closing.showItemPrices === false;
+  const totalHeight = onlyTotal ? 19 : discount > 0 ? 31 : 25, totalX = pageWidth - margin - 80;
   doc.setFillColor(...emerald); doc.roundedRect(totalX, y, 80, totalHeight, 2.5, 2.5, "F");
-  textStyle([207, 226, 222], 8.5); doc.text("Subtotal", totalX + 6, y + 8); doc.text(brl(subtotal), totalX + 74, y + 8, { align: "right" });
-  let totalLine = y + 18;
-  if (discount > 0) {
+  if (!onlyTotal) {
+    textStyle([207, 226, 222], 8.5); doc.text("Subtotal", totalX + 6, y + 8); doc.text(brl(subtotal), totalX + 74, y + 8, { align: "right" });
+  }
+  let totalLine = onlyTotal ? y + 12 : y + 18;
+  if (!onlyTotal && discount > 0) {
     doc.text("Desconto", totalX + 6, y + 14); doc.text(`- ${brl(discount)}`, totalX + 74, y + 14, { align: "right" }); totalLine = y + 24;
   }
   textStyle([255, 255, 255], 11, "bold"); doc.text("TOTAL", totalX + 6, totalLine); doc.text(brl(total), totalX + 74, totalLine, { align: "right" });
