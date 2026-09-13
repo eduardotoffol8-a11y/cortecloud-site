@@ -1,6 +1,6 @@
 const CACHE = "orcamovel-v3";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v1";
-const CORE = ["/", "/manifest.webmanifest", "/favicon.svg", "/pwa-company-icon-192.png", "/pwa-company-icon-512.png"];
+const CORE = ["/", "/manifest.webmanifest", "/orcamovel-brand-192.png", "/pwa-company-icon-192.png", "/pwa-company-icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)));
