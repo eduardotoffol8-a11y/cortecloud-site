@@ -6,6 +6,7 @@ import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
 import { BudgetApp } from "./budget-app";
 import { InstallAppButton } from "./install-app-button";
+import { PlanNudge } from "./plan-nudge";
 import { PricingScreen } from "./pricing-screen";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountProfile } from "@/lib/types";
@@ -65,7 +66,7 @@ function AuthScreen() {
     try {
       const { error: passkeyError } = await supabase.auth.signInWithPasskey();
       if (passkeyError) {
-        if (passkeyError.code === "passkey_disabled") setError("A biometria ainda não está liberada no servidor. Entre com Google.");
+        if (passkeyError.code === "passkey_disabled") setError("A biometria ainda não está habilitada no servidor. Entre com Google por enquanto.");
         else if (passkeyError.name === "NotAllowedError") setError("A entrada foi cancelada ou não há uma digital cadastrada para este site.");
         else setError("Não encontramos um acesso biométrico válido. Entre com Google e ative a digital nos Ajustes.");
       }
@@ -128,6 +129,7 @@ export function AuthShell() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPlans, setShowPlans] = useState(false);
 
   const loadProfile = useCallback(async (currentSession: Session | null) => {
     setSession(currentSession);
@@ -224,6 +226,12 @@ export function AuthShell() {
   const paidAccess = profile.subscriptionStatus === "active" && (profile.planType === "lifetime" || !profile.accessExpiresAt || new Date(profile.accessExpiresAt).getTime() > now);
   const expired = !paidAccess && new Date(profile.trialEndsAt).getTime() <= now;
   if (expired) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} />;
+  if (showPlans) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} onBack={() => setShowPlans(false)} trialEnded={false} />;
 
-  return <BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} />;
+  return (
+    <>
+      <BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} />
+      <PlanNudge userId={session.user.id} profile={profile} onOpenPlans={() => setShowPlans(true)} />
+    </>
+  );
 }
