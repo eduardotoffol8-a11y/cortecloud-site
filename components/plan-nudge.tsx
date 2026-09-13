@@ -23,9 +23,11 @@ export function PlanNudge({ userId, profile, onOpenPlans }: { userId: string; pr
     if (localStorage.getItem(storageKey) === today) return;
 
     const timer = window.setTimeout(() => {
+      const companyConfigured = Boolean(localStorage.getItem("orcamovel.company.v2") || localStorage.getItem("orcamovel.company.v1"));
+      if (!companyConfigured) return;
       localStorage.setItem(storageKey, today);
       setOpen(true);
-    }, 900);
+    }, 6000);
 
     return () => window.clearTimeout(timer);
   }, [eligible, storageKey]);
