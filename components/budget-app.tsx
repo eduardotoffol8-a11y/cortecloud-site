@@ -78,6 +78,12 @@ function companyTheme(company: CompanyInfo): React.CSSProperties {
   } as React.CSSProperties;
 }
 
+function pdfBrandSignature(company: CompanyInfo) {
+  const primary = /^#[\da-f]{6}$/i.test(company.primaryColor) ? company.primaryColor : emptyCompany.primaryColor;
+  const secondary = /^#[\da-f]{6}$/i.test(company.secondaryColor) ? company.secondaryColor : emptyCompany.secondaryColor;
+  return `${primary.toLowerCase()}:${secondary.toLowerCase()}`;
+}
+
 function normalizeQuote(input: Quote): Quote {
   return {
     ...input,
@@ -376,7 +382,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     try {
       const timestamp = new Date().toISOString();
       const pdfStoragePath = quote.pdfStoragePath || `${userId}/${quote.id}.pdf`;
-      const saved = { ...quote, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath };
+      const saved = { ...quote, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: pdfBrandSignature(company) };
       const { projectImages, projectDocuments } = navigator.onLine ? await loadIncludedProjectFiles(saved) : { projectImages: [], projectDocuments: [] };
       const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
       if (navigator.onLine && supabase) {
@@ -397,7 +403,9 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
   const downloadSavedPdf = async (saved: Quote) => {
     try {
-      if (saved.pdfStoragePath && supabase) {
+      const currentBrandSignature = pdfBrandSignature(company);
+      const needsBrandRefresh = saved.pdfBrandSignature !== currentBrandSignature;
+      if (!needsBrandRefresh && saved.pdfStoragePath && supabase) {
         const stored = await supabase.storage.from("quote-pdfs").download(saved.pdfStoragePath);
         if (!stored.error && stored.data) {
           downloadBlob(stored.data, `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`);
@@ -406,9 +414,19 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         }
       }
       const { projectImages, projectDocuments } = await loadIncludedProjectFiles(saved);
-      const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
+      const timestamp = new Date().toISOString();
+      const pdfStoragePath = saved.pdfStoragePath || `${userId}/${saved.id}.pdf`;
+      const refreshed = { ...saved, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: currentBrandSignature };
+      const generated = await generateQuotePdf(refreshed, company, projectImages, projectDocuments);
+      if (supabase && navigator.onLine) {
+        const upload = await supabase.storage.from("quote-pdfs").upload(pdfStoragePath, generated.blob, { contentType: "application/pdf", upsert: true });
+        if (upload.error) throw upload.error;
+        await persistQuote(refreshed);
+        setHistory((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
+        if (quote.id === refreshed.id) setQuote(refreshed);
+      }
       downloadBlob(generated.blob, generated.fileName);
-      setNotice("Download iniciado.");
+      setNotice(needsBrandRefresh ? "PDF atualizado com a nova paleta e arquivado." : "Download iniciado.");
     } catch {
       setNotice("Não foi possível baixar este PDF.");
     }
