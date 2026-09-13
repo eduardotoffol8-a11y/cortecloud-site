@@ -61,6 +61,13 @@ function normalizeQuote(input: Quote): Quote {
     ...input,
     id: isUuid(input.id) ? input.id : crypto.randomUUID(),
     clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID(),
+    closing: {
+      ...input.closing,
+      exclusions: input.closing.exclusions || "",
+      measurementIncluded: input.closing.measurementIncluded !== false,
+      deliveryIncluded: input.closing.deliveryIncluded !== false,
+      installationIncluded: input.closing.installationIncluded !== false,
+    },
     attachments: (input.attachments || []).map((attachment) => ({ ...attachment, includeInPdf: attachment.includeInPdf !== false })),
   };
 }
@@ -124,7 +131,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       let storedDraft: Quote | null = null;
       try {
         storedHistory = (JSON.parse(localStorage.getItem(HISTORY_KEY) || localStorage.getItem("orcamovel.history.v1") || "[]") as Quote[]).map(normalizeQuote);
-        storedCompany = JSON.parse(localStorage.getItem(COMPANY_KEY) || localStorage.getItem("orcamovel.company.v1") || "null") || emptyCompany;
+        storedCompany = { ...emptyCompany, ...(JSON.parse(localStorage.getItem(COMPANY_KEY) || localStorage.getItem("orcamovel.company.v1") || "null") || {}) };
         const rawDraft = JSON.parse(localStorage.getItem(DRAFT_KEY) || localStorage.getItem("orcamovel.draft.v1") || "null") as Quote | null;
         storedDraft = rawDraft ? normalizeQuote(rawDraft) : null;
       } catch {
@@ -137,12 +144,12 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
       if (supabase) {
         const [companyResult, quotesResult, attachmentsResult] = await Promise.all([
-          supabase.from("company_profiles").select("name,document,contact,email,address,logo_data").eq("user_id", userId).maybeSingle(),
+          supabase.from("company_profiles").select("name,document,contact,email,address,logo_data,primary_color,secondary_color").eq("user_id", userId).maybeSingle(),
           supabase.from("quotes").select("payload,pdf_generated_at").eq("user_id", userId).order("updated_at", { ascending: false }),
           supabase.from("project_attachments").select("id,quote_id,file_name,storage_path,mime_type,size_bytes,created_at,include_in_pdf").eq("user_id", userId).order("created_at", { ascending: false }),
         ]);
         if (companyResult.data?.name) {
-          nextCompany = { name: companyResult.data.name, document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "" };
+          nextCompany = { name: companyResult.data.name, document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "", primaryColor: companyResult.data.primary_color || emptyCompany.primaryColor, secondaryColor: companyResult.data.secondary_color || emptyCompany.secondaryColor };
           needsOnboarding = false;
         }
         if (quotesResult.data?.length) {
@@ -414,7 +421,8 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     try {
       const { error } = await supabase!.from("company_profiles").upsert({
         user_id: userId, name: company.name.trim(), document: company.document, contact: company.contact,
-        email: company.email, address: company.address, logo_data: company.logo, updated_at: new Date().toISOString(),
+        email: company.email, address: company.address, logo_data: company.logo, primary_color: company.primaryColor,
+        secondary_color: company.secondaryColor, updated_at: new Date().toISOString(),
       });
       if (error) throw error;
       setOnboarding(false);
