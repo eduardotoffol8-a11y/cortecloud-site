@@ -7,6 +7,11 @@ export interface ClientInfo {
   name: string; phone: string; email: string; document: string; projectName: string; address: string;
 }
 
+export interface RegisteredClient {
+  id: string; name: string; phone: string; email: string; document: string; address: string;
+  createdAt: string; updatedAt: string;
+}
+
 export interface FurnitureItem {
   id: string; environment: string; name: string; quantity: number; width: string; height: string; depth: string;
   mdfColor: string; mdfThickness: string; frontColor: string; handle: string;
