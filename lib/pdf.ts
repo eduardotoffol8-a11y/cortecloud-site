@@ -66,35 +66,61 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     doc.addPage(); continuationHeader();
   };
 
-  doc.setFillColor(...emerald); doc.rect(0, 0, pageWidth, 39, "F");
-  doc.setFillColor(...gold); doc.rect(0, 39, pageWidth, 1.2, "F");
+  doc.setFillColor(...emerald); doc.rect(0, 0, pageWidth, 34, "F");
+  doc.setFillColor(...gold); doc.rect(0, 34, pageWidth, 1.2, "F");
   let brandX = margin;
   if (company.logo) {
     try {
-      doc.setFillColor(255, 255, 255); doc.roundedRect(margin, 10, 27, 24, 2, 2, "F");
-      doc.addImage(company.logo, imageFormat(company.logo), margin + 1.5, 11.5, 24, 21, undefined, "FAST");
-      brandX = margin + 33;
+      doc.setFillColor(255, 255, 255); doc.roundedRect(margin, 6, 24, 22, 2, 2, "F");
+      doc.addImage(company.logo, imageFormat(company.logo), margin + 1.5, 7.5, 21, 19, undefined, "FAST");
+      brandX = margin + 30;
     } catch { /* Company name remains the letterhead. */ }
   }
-  textStyle([255, 255, 255], 16, "bold"); doc.text(company.name || "Sua marcenaria", brandX, 17);
-  textStyle([220, 235, 232], 8.5);
-  const companyLine = [company.document, company.contact, company.email].filter(Boolean).join("  |  ");
-  doc.text(doc.splitTextToSize(companyLine || "Marcenaria sob medida", 102).slice(0, 2), brandX, 23);
-  if (company.address) doc.text(doc.splitTextToSize(company.address, 102)[0], brandX, 32);
-  textStyle([223, 192, 131], 8, "bold"); doc.text("PROPOSTA COMERCIAL", pageWidth - margin, 13, { align: "right" });
-  textStyle([255, 255, 255], 13.5, "bold"); doc.text(quote.number, pageWidth - margin, 21, { align: "right" });
-  textStyle([220, 235, 232], 8.5); doc.text(new Date(quote.createdAt).toLocaleDateString("pt-BR"), pageWidth - margin, 28, { align: "right" });
+  textStyle([255, 255, 255], 15, "bold"); doc.text(company.name || "Sua marcenaria", brandX, 14);
+  textStyle([220, 235, 232], 8.5); doc.text("MARCENARIA SOB MEDIDA", brandX, 21);
+  textStyle([223, 192, 131], 8, "bold"); doc.text("PROPOSTA COMERCIAL", pageWidth - margin, 11, { align: "right" });
+  textStyle([255, 255, 255], 13, "bold"); doc.text(quote.number, pageWidth - margin, 19, { align: "right" });
 
-  y = 49; sectionTitle("Cliente e projeto");
-  doc.setFillColor(...mist); doc.roundedRect(margin, y, contentWidth, 28, 2.5, 2.5, "F");
-  doc.setFillColor(...teal); doc.roundedRect(margin, y, 3, 28, 1.5, 1.5, "F");
-  textStyle(ink, 12, "bold"); doc.text(quote.client.name || "Cliente não informado", margin + 8, y + 8);
-  textStyle(muted, 8.7);
-  const contact = [quote.client.phone, quote.client.email, quote.client.document].filter(Boolean).join("  |  ") || "Contato não informado";
-  doc.text(doc.splitTextToSize(contact, contentWidth - 16).slice(0, 1), margin + 8, y + 14.5);
-  textStyle(emerald, 8.5, "bold"); doc.text(quote.client.projectName || "Projeto sem nome", margin + 8, y + 20);
-  textStyle(muted, 8.3); doc.text(doc.splitTextToSize(quote.client.address || "Local da obra não informado", contentWidth - 16).slice(0, 1), margin + 8, y + 25);
-  y += 36; sectionTitle("Móveis e especificações");
+  // Document control follows the familiar fiscal-document reading order.
+  y = 43;
+  const controlWidth = contentWidth / 3;
+  const validUntil = new Date(quote.createdAt);
+  validUntil.setDate(validUntil.getDate() + Number(quote.closing.validityDays || 15));
+  const controls: Array<[string, string]> = [
+    ["NÚMERO DO ORÇAMENTO", quote.number],
+    ["DATA DE EMISSÃO", new Date(quote.createdAt).toLocaleDateString("pt-BR")],
+    ["VÁLIDO ATÉ", validUntil.toLocaleDateString("pt-BR")],
+  ];
+  controls.forEach(([label, value], index) => {
+    const x = margin + index * controlWidth;
+    doc.setFillColor(...mist); doc.rect(x, y, controlWidth - (index < 2 ? 1.5 : 0), 15, "F");
+    textStyle(muted, 6.8, "bold"); doc.text(label, x + 4, y + 5);
+    textStyle(ink, 9.5, "bold"); doc.text(value, x + 4, y + 11.5);
+  });
+
+  y = 66; sectionTitle("Identificação das partes");
+  const partyGap = 4, partyWidth = (contentWidth - partyGap) / 2, partyHeight = 43;
+  const drawParty = (x: number, title: string, name: string, document: string, contact: string, email: string, address: string) => {
+    doc.setDrawColor(...line); doc.setFillColor(252, 253, 253); doc.roundedRect(x, y, partyWidth, partyHeight, 2.3, 2.3, "FD");
+    doc.setFillColor(...emerald); doc.roundedRect(x, y, partyWidth, 8, 2.3, 2.3, "F"); doc.rect(x, y + 4, partyWidth, 4, "F");
+    textStyle([255, 255, 255], 7.5, "bold"); doc.text(title, x + 5, y + 5.5);
+    textStyle(ink, 10, "bold"); doc.text(doc.splitTextToSize(name || "Não informado", partyWidth - 10)[0], x + 5, y + 14);
+    const rows: Array<[string, string]> = [["CPF/CNPJ", document], ["CONTATO", contact], ["E-MAIL", email], ["ENDEREÇO", address]];
+    rows.forEach(([label, value], index) => {
+      const rowY = y + 20 + index * 5.3;
+      textStyle(muted, 6.5, "bold"); doc.text(label, x + 5, rowY);
+      const valueLines = doc.splitTextToSize(value || "Não informado", partyWidth - 30) as string[];
+      textStyle(ink, 7.8); doc.text(valueLines.slice(0, index === 3 ? 2 : 1), x + 28, rowY);
+    });
+  };
+  drawParty(margin, "EMITENTE / MARCENARIA", company.name, company.document, company.contact, company.email, company.address);
+  drawParty(margin + partyWidth + partyGap, "DESTINATÁRIO / CLIENTE", quote.client.name, quote.client.document, quote.client.phone, quote.client.email, quote.client.address);
+
+  y += partyHeight + 7;
+  doc.setFillColor(...mist); doc.roundedRect(margin, y, contentWidth, 12, 2, 2, "F");
+  textStyle(muted, 6.8, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 4.5);
+  textStyle(emerald, 9.2, "bold"); doc.text(doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10)[0], margin + 5, y + 9.5);
+  y += 20; sectionTitle("Móveis e especificações");
 
   quote.furniture.forEach((item, index) => {
     const specs = `${item.width || "-"} L x ${item.height || "-"} A x ${item.depth || "-"} P mm  |  MDF ${item.mdfThickness || "-"} mm  |  ${item.mdfColor || "Cor não informada"}`;
@@ -134,7 +160,30 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     y += 3;
   }
 
-  ensureSpace(58); sectionTitle("Condições comerciais");
+  const conditionsOnNewPage = y + 70 > footerLimit;
+  if (conditionsOnNewPage) {
+    doc.addPage(); continuationHeader();
+    textStyle(emerald, 16, "bold"); doc.text("Condições e aceite", margin, y + 2);
+    textStyle(muted, 8.5); doc.text("Resumo final da proposta para conferência e aprovação.", margin, y + 9);
+    y += 18;
+    const summaryWidth = (contentWidth - 6) / 3;
+    const summaries: Array<[string, string]> = [
+      ["VALOR DA PROPOSTA", brl(total)],
+      ["ITENS ORÇADOS", `${quote.furniture.length} ${quote.furniture.length === 1 ? "móvel" : "móveis"}`],
+      ["VALIDADE", `${quote.closing.validityDays || "15"} dias`],
+    ];
+    summaries.forEach(([label, value], index) => {
+      const x = margin + index * (summaryWidth + 3);
+      doc.setFillColor(index === 0 ? emerald[0] : mist[0], index === 0 ? emerald[1] : mist[1], index === 0 ? emerald[2] : mist[2]);
+      doc.roundedRect(x, y, summaryWidth, 21, 2.2, 2.2, "F");
+      textStyle(index === 0 ? [211, 229, 225] : muted, 6.8, "bold"); doc.text(label, x + 4, y + 6);
+      textStyle(index === 0 ? [255, 255, 255] : ink, 10.5, "bold"); doc.text(value, x + 4, y + 14);
+    });
+    y += 31;
+  } else {
+    ensureSpace(70);
+  }
+  sectionTitle("Condições comerciais");
   const terms: Array<[string, string]> = [
     ["Pagamento", [quote.closing.paymentMethod, quote.closing.paymentTerms].filter(Boolean).join(" - ")],
     ["Entrega", quote.closing.deliveryTime], ["Garantia", quote.closing.warranty], ["Validade", `${quote.closing.validityDays || "15"} dias`],
@@ -156,7 +205,11 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     textStyle(muted, 8.5); doc.text(noteLines, margin, y + 6); y += noteLines.length * 4.4 + 12;
   }
 
-  ensureSpace(11); y += 2;
+  ensureSpace(26);
+  textStyle(muted, 7.8);
+  const acceptance = "Ao assinar, o cliente declara estar de acordo com o escopo, os valores e as condições comerciais desta proposta.";
+  doc.text(doc.splitTextToSize(acceptance, contentWidth), margin, y + 1);
+  y += 13;
   doc.setDrawColor(152, 166, 162); doc.line(margin, y, margin + 70, y); doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
   textStyle(muted, 8); doc.text("Responsável pela marcenaria", margin + 35, y + 5, { align: "center" }); doc.text("Cliente", pageWidth - margin - 35, y + 5, { align: "center" });
 
