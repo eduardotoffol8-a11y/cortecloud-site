@@ -54,7 +54,7 @@ export function PasskeyCard({ compact = false }: { compact?: boolean }) {
   return (
     <section className={`app-card ${compact ? "p-4" : "p-5 sm:p-6"}`}>
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e4f2ef] text-[#0f766e]"><Fingerprint size={23} /></span>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e4f2ef] text-[var(--brand)]"><Fingerprint size={23} /></span>
         <div className="min-w-0 flex-1">
           <h2 className="font-bold">Entrar com digital</h2>
           <p className="mt-1 text-sm leading-5 text-[#6f7f7b]">Use a digital, o rosto ou o PIN deste aparelho. Sem memorizar senha.</p>
@@ -65,7 +65,7 @@ export function PasskeyCard({ compact = false }: { compact?: boolean }) {
         <div className="mt-4 space-y-2">
           {passkeys.map((passkey) => (
             <div key={passkey.id} className="flex items-center gap-3 rounded-xl bg-[#f2f7f5] px-3 py-2.5">
-              <ShieldCheck size={18} className="shrink-0 text-[#0f766e]" />
+              <ShieldCheck size={18} className="shrink-0 text-[var(--brand)]" />
               <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{passkey.friendly_name || "Acesso deste aparelho"}</p><p className="text-xs text-[#7b8b87]">Ativo e protegido</p></div>
               <button type="button" onClick={() => void remove(passkey.id)} className="quiet-button !min-h-9 !w-9 !p-0 !text-rose-600" aria-label="Remover acesso"><Trash2 size={16} /></button>
             </div>
