@@ -50,7 +50,10 @@ function formatDate(value: string) {
 }
 
 function isQuoteStarted(quote: Quote) {
-  return Boolean(quote.client.name || quote.client.projectName || quote.furniture.some((item) => item.name || item.unitPrice));
+  return Boolean(
+    quote.client.projectName.trim()
+    || quote.furniture.some((item) => item.name.trim() || item.environment.trim() || item.unitPrice.trim() || item.width.trim() || item.height.trim() || item.depth.trim() || item.extras.trim()),
+  );
 }
 
 function isUuid(value?: string) {
