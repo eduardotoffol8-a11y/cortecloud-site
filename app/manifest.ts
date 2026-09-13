@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "OrçaMóvel",
     description: "Orçamentos profissionais para marcenaria.",
     id: "/",
-    start_url: "/",
+    start_url: "/apps/moveis",
     scope: "/",
     display: "standalone",
     background_color: "#f2f6f5",
