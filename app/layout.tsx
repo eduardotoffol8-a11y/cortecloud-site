@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "OrçaMóvel | Orçamentos para marcenaria",
   description: "Crie, organize e apresente orçamentos profissionais de móveis sob medida.",
   applicationName: "OrçaMóvel",
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: "/favicon.svg", apple: "/pwa-company-icon-192.png" },
 };
 
 export const viewport: Viewport = {
