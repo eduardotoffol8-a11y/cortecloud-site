@@ -10,6 +10,7 @@ import { CompanyForm } from "./company-form";
 import { InstallAppButton } from "./install-app-button";
 import { AccountSecurity } from "./account-security";
 import { PasskeyCard } from "./passkey-card";
+import { PricingScreen } from "./pricing-screen";
 import { QuoteEditor } from "./quote-editor";
 import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, QuoteStatus, RegisteredClient } from "@/lib/types";
 import { brl, createEmptyQuote, emptyCompany, nextQuoteNumber, quoteTotal, statusLabel } from "@/lib/quote";
@@ -153,6 +154,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [clientDraft, setClientDraft] = useState<RegisteredClient | null>(null);
   const [search, setSearch] = useState("");
+  const [showPlans, setShowPlans] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -655,7 +657,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     <section className="view-enter">
       <PageHeading eyebrow="Perfil" title="Dados da marcenaria" />
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
-      <AccountSecurity email={userEmail} onSignOut={onSignOut} />
+      <AccountSecurity email={userEmail} onSignOut={onSignOut} onOpenPlans={() => setShowPlans(true)} />
     </section>
   );
 
@@ -670,6 +672,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   }, [startNewQuote]);
 
   if (!hydrated) return <div className="grid min-h-screen place-items-center"><BrandMark /></div>;
+  if (showPlans) return <PricingScreen email={userEmail} onSignOut={onSignOut} onRefresh={() => window.location.reload()} onBack={() => setShowPlans(false)} trialEnded={false} />;
   if (onboarding) return (
     <main className="min-h-screen bg-[#f2f6f5] px-4 py-7 sm:px-6" style={companyTheme(company)}>
       <div className="mx-auto max-w-5xl">
