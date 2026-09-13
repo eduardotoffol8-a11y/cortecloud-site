@@ -44,6 +44,7 @@ export function QuoteEditor({
   onUpload,
   onDownloadAttachment,
   onRemoveAttachment,
+  onSetAttachmentIncluded,
   isUploading,
 }: {
   quote: Quote;
@@ -54,6 +55,7 @@ export function QuoteEditor({
   onUpload: (files: FileList) => void;
   onDownloadAttachment: (attachment: ProjectAttachment) => void;
   onRemoveAttachment: (attachment: ProjectAttachment) => void;
+  onSetAttachmentIncluded: (attachment: ProjectAttachment, included: boolean) => void;
   isUploading: boolean;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -140,7 +142,7 @@ export function QuoteEditor({
           <button type="button" onClick={() => fileInput.current?.click()} disabled={isUploading} className="secondary-button mt-4 w-full">
             {isUploading ? <LoaderCircle className="animate-spin" size={18} /> : <Upload size={18} />}{isUploading ? "Enviando…" : "Adicionar fotos ou PDF"}
           </button>
-          {!!quote.attachments?.length && <div className="mt-3 divide-y divide-[#e1e9e7] rounded-xl border border-[#e1e9e7]">{quote.attachments.map((attachment) => <AttachmentRow key={attachment.id} attachment={attachment} onDownload={() => onDownloadAttachment(attachment)} onRemove={() => onRemoveAttachment(attachment)} />)}</div>}
+          {!!quote.attachments?.length && <div className="mt-3 divide-y divide-[#e1e9e7] rounded-xl border border-[#e1e9e7]">{quote.attachments.map((attachment) => <AttachmentRow key={attachment.id} attachment={attachment} onDownload={() => onDownloadAttachment(attachment)} onRemove={() => onRemoveAttachment(attachment)} onSetIncluded={(included) => onSetAttachmentIncluded(attachment, included)} />)}</div>}
         </section>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between"><button type="button" onClick={() => setStep(1)} className="secondary-button"><ChevronLeft size={18} />Voltar</button><button type="button" onClick={() => setStep(3)} className="primary-button">Ir para fechamento <ChevronRight size={18} /></button></div>
       </section>
@@ -177,8 +179,8 @@ export function QuoteEditor({
   );
 }
 
-function AttachmentRow({ attachment, onDownload, onRemove }: { attachment: ProjectAttachment; onDownload: () => void; onRemove: () => void }) {
+function AttachmentRow({ attachment, onDownload, onRemove, onSetIncluded }: { attachment: ProjectAttachment; onDownload: () => void; onRemove: () => void; onSetIncluded: (included: boolean) => void }) {
   const Icon = attachment.mimeType === "application/pdf" ? FileText : FileImage;
   const size = attachment.size < 1_000_000 ? `${Math.ceil(attachment.size / 1_000)} KB` : `${(attachment.size / 1_000_000).toFixed(1)} MB`;
-  return <div className="flex items-center gap-3 px-3 py-2.5"><Icon size={19} className="shrink-0 text-[#0f766e]" /><button type="button" onClick={onDownload} className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-bold">{attachment.name}</span><span className="text-xs text-[#7b8b87]">{size}</span></button><button type="button" onClick={onRemove} className="quiet-button !min-h-9 !w-9 !p-0 !text-rose-600" aria-label={`Excluir ${attachment.name}`}><Trash2 size={16} /></button></div>;
+  return <div className="flex flex-wrap items-center gap-3 px-3 py-3"><Icon size={19} className="shrink-0 text-[#0f766e]" /><button type="button" onClick={onDownload} className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-bold">{attachment.name}</span><span className="text-xs text-[#7b8b87]">{size}</span></button><button type="button" onClick={onRemove} className="quiet-button !min-h-9 !w-9 !p-0 !text-rose-600" aria-label={`Excluir ${attachment.name}`}><Trash2 size={16} /></button><label className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-[#f3f7f6] px-3 py-2 text-sm font-semibold text-[#48605b]"><span>Incluir no orçamento</span><input type="checkbox" checked={attachment.includeInPdf} onChange={(event) => onSetIncluded(event.target.checked)} className="h-5 w-5 accent-[#0f766e]" /></label></div>;
 }

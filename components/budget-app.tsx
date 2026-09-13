@@ -13,7 +13,7 @@ import { PasskeyCard } from "./passkey-card";
 import { QuoteEditor } from "./quote-editor";
 import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, QuoteStatus } from "@/lib/types";
 import { brl, createEmptyQuote, emptyCompany, nextQuoteNumber, quoteTotal, statusLabel } from "@/lib/quote";
-import { generateQuotePdf } from "@/lib/pdf";
+import { generateQuotePdf, type PdfProjectDocument, type PdfProjectImage } from "@/lib/pdf";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const DRAFT_KEY = "orcamovel.draft.v2";
@@ -57,11 +57,44 @@ function isUuid(value?: string) {
 }
 
 function normalizeQuote(input: Quote): Quote {
-  return { ...input, id: isUuid(input.id) ? input.id : crypto.randomUUID(), clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID(), attachments: input.attachments || [] };
+  return {
+    ...input,
+    id: isUuid(input.id) ? input.id : crypto.randomUUID(),
+    clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID(),
+    attachments: (input.attachments || []).map((attachment) => ({ ...attachment, includeInPdf: attachment.includeInPdf !== false })),
+  };
 }
 
 function safeFileName(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-100) || "arquivo";
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
+
+async function optimizeImageForPdf(blob: Blob) {
+  const bitmap = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const maximumSide = 1600;
+  const scale = Math.min(1, maximumSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    throw new Error("Canvas unavailable");
+  }
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.8);
 }
 
 type ClientFolder = { id: string; info: Quote["client"]; quotes: Quote[]; updatedAt: string };
@@ -106,7 +139,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         const [companyResult, quotesResult, attachmentsResult] = await Promise.all([
           supabase.from("company_profiles").select("name,document,contact,email,address,logo_data").eq("user_id", userId).maybeSingle(),
           supabase.from("quotes").select("payload,pdf_generated_at").eq("user_id", userId).order("updated_at", { ascending: false }),
-          supabase.from("project_attachments").select("id,quote_id,file_name,storage_path,mime_type,size_bytes,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
+          supabase.from("project_attachments").select("id,quote_id,file_name,storage_path,mime_type,size_bytes,created_at,include_in_pdf").eq("user_id", userId).order("created_at", { ascending: false }),
         ]);
         if (companyResult.data?.name) {
           nextCompany = { name: companyResult.data.name, document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "" };
@@ -115,7 +148,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         if (quotesResult.data?.length) {
           nextHistory = quotesResult.data.map((row) => {
             const payload = row.payload as Quote;
-            const attachments = (attachmentsResult.data || []).filter((file) => file.quote_id === payload.id).map((file) => ({ id: file.id, name: file.file_name, path: file.storage_path, mimeType: file.mime_type, size: Number(file.size_bytes), createdAt: file.created_at }));
+            const attachments = (attachmentsResult.data || []).filter((file) => file.quote_id === payload.id).map((file) => ({ id: file.id, name: file.file_name, path: file.storage_path, mimeType: file.mime_type, size: Number(file.size_bytes), createdAt: file.created_at, includeInPdf: file.include_in_pdf !== false }));
             return normalizeQuote({ ...payload, attachments, pdfGeneratedAt: row.pdf_generated_at || payload.pdfGeneratedAt });
           });
         }
@@ -199,6 +232,26 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     }
   }, [persistQuote, quote]);
 
+  const loadIncludedProjectFiles = useCallback(async (source: Quote) => {
+    if (!supabase) return { projectImages: [] as PdfProjectImage[], projectDocuments: [] as PdfProjectDocument[] };
+    const included = (source.attachments || []).filter((attachment) => attachment.includeInPdf);
+    const prepared = await Promise.all(included.map(async (attachment) => {
+      const result = await supabase.storage.from("project-files").download(attachment.path);
+      if (result.error || !result.data) throw result.error || new Error("Attachment unavailable");
+      if (attachment.mimeType === "application/pdf") {
+        return { document: { name: attachment.name, bytes: await result.data.arrayBuffer() } as PdfProjectDocument };
+      }
+      if (attachment.mimeType.startsWith("image/")) {
+        return { image: { name: attachment.name, dataUrl: await optimizeImageForPdf(result.data) } as PdfProjectImage };
+      }
+      return {};
+    }));
+    return {
+      projectImages: prepared.flatMap((item) => item.image ? [item.image] : []),
+      projectDocuments: prepared.flatMap((item) => item.document ? [item.document] : []),
+    };
+  }, [supabase]);
+
   const handleGeneratePdf = async () => {
     if (!company.name) { setView("settings"); return setNotice("Cadastre a marcenaria antes de gerar o PDF."); }
     if (!quote.client.name) return setNotice("Informe o nome do cliente.");
@@ -206,12 +259,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     setIsGenerating(true);
     try {
       const timestamp = new Date().toISOString();
-      const saved = { ...quote, updatedAt: timestamp, pdfGeneratedAt: timestamp };
+      const pdfStoragePath = quote.pdfStoragePath || `${userId}/${quote.id}.pdf`;
+      const saved = { ...quote, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath };
+      const { projectImages, projectDocuments } = await loadIncludedProjectFiles(saved);
+      const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
+      const upload = await supabase!.storage.from("quote-pdfs").upload(pdfStoragePath, generated.blob, { contentType: "application/pdf", upsert: true });
+      if (upload.error) throw upload.error;
+      await persistQuote(saved);
       setQuote(saved);
       setHistory((current) => current.some((item) => item.id === saved.id) ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
-      await persistQuote(saved);
-      await generateQuotePdf(saved, company);
-      setNotice("PDF gerado e arquivado.");
+      downloadBlob(generated.blob, generated.fileName);
+      setNotice(quote.pdfGeneratedAt ? "PDF atualizado e arquivado." : "PDF gerado e arquivado.");
     } catch {
       setNotice("Não foi possível gerar o PDF. Confira os dados e tente novamente.");
     } finally {
@@ -221,7 +279,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
   const downloadSavedPdf = async (saved: Quote) => {
     try {
-      await generateQuotePdf(saved, company);
+      if (saved.pdfStoragePath && supabase) {
+        const stored = await supabase.storage.from("quote-pdfs").download(saved.pdfStoragePath);
+        if (!stored.error && stored.data) {
+          downloadBlob(stored.data, `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`);
+          setNotice("Download iniciado.");
+          return;
+        }
+      }
+      const { projectImages, projectDocuments } = await loadIncludedProjectFiles(saved);
+      const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
+      downloadBlob(generated.blob, generated.fileName);
       setNotice("Download iniciado.");
     } catch {
       setNotice("Não foi possível baixar este PDF.");
@@ -253,6 +321,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     if (supabase) {
       const paths = selected?.attachments?.map((attachment) => attachment.path) || [];
       if (paths.length) await supabase.storage.from("project-files").remove(paths);
+      if (selected?.pdfStoragePath) await supabase.storage.from("quote-pdfs").remove([selected.pdfStoragePath]);
       await supabase.from("quotes").delete().eq("id", id).eq("user_id", userId);
       if (selected && !remaining.some((item) => item.clientId === selected.clientId)) await supabase.from("clients").delete().eq("id", selected.clientId).eq("user_id", userId);
     }
@@ -275,12 +344,12 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         const upload = await supabase.storage.from("project-files").upload(path, file, { contentType: file.type, upsert: false });
         if (upload.error) throw upload.error;
         const createdAt = new Date().toISOString();
-        const metadata = await supabase.from("project_attachments").insert({ id, user_id: userId, client_id: saved.clientId, quote_id: saved.id, file_name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size, created_at: createdAt });
+        const metadata = await supabase.from("project_attachments").insert({ id, user_id: userId, client_id: saved.clientId, quote_id: saved.id, file_name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size, created_at: createdAt, include_in_pdf: true });
         if (metadata.error) {
           await supabase.storage.from("project-files").remove([path]);
           throw metadata.error;
         }
-        additions.push({ id, name: file.name, path, mimeType: file.type, size: file.size, createdAt });
+        additions.push({ id, name: file.name, path, mimeType: file.type, size: file.size, createdAt, includeInPdf: true });
       }
       const updated = { ...saved, attachments: [...(saved.attachments || []), ...additions], updatedAt: new Date().toISOString() };
       await persistQuote(updated);
@@ -316,6 +385,18 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     setHistory((current) => current.map((item) => item.id === updated.id ? updated : item));
     await persistQuote(updated);
     setNotice("Arquivo excluído.");
+  };
+
+  const setAttachmentIncluded = async (attachment: ProjectAttachment, includeInPdf: boolean) => {
+    if (!supabase) return;
+    const { error } = await supabase.from("project_attachments").update({ include_in_pdf: includeInPdf }).eq("id", attachment.id).eq("user_id", userId);
+    if (error) return setNotice("Não foi possível alterar este arquivo.");
+    const updateAttachments = (attachments: ProjectAttachment[] = []) => attachments.map((file) => file.id === attachment.id ? { ...file, includeInPdf } : file);
+    const updated = { ...quote, attachments: updateAttachments(quote.attachments), updatedAt: new Date().toISOString() };
+    setQuote(updated);
+    setHistory((current) => current.map((item) => item.id === updated.id ? updated : item));
+    await persistQuote(updated);
+    setNotice(includeInPdf ? "Arquivo será incluído no orçamento." : "Arquivo ficará apenas na pasta do projeto.");
   };
 
   const handleLogo = (file?: File) => {
@@ -463,7 +544,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#f1f6f4] px-3 py-1.5 text-xs font-bold text-[#64746f] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton /></div></div></header>
-      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} isUploading={isUploading} /> : views[view]()}</main>
+      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t border-[#d5e1de] bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[#e7f3f1] text-[#0c6d65]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[#0f766e] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
       {notice && <Notice text={notice} />}
     </div>

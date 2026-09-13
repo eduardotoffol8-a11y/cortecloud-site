@@ -3,6 +3,16 @@ import { brl, moneyValue, quoteSubtotal, quoteTotal } from "./quote";
 
 const cleanFileName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+export interface PdfProjectImage {
+  name: string;
+  dataUrl: string;
+}
+
+export interface PdfProjectDocument {
+  name: string;
+  bytes: ArrayBuffer;
+}
+
 const extraDetails = (item: FurnitureItem) => {
   const details: string[] = [];
   if (item.frontColor) details.push(`Frentes: ${item.frontColor}`);
@@ -15,7 +25,7 @@ const extraDetails = (item: FurnitureItem) => {
   return details.join(" • ") || "Sem ferragens ou adicionais especificados";
 };
 
-export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
+export async function generateQuotePdf(quote: Quote, company: CompanyInfo, projectImages: PdfProjectImage[] = [], projectDocuments: PdfProjectDocument[] = []) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true, putOnlyUsedFonts: true });
   const pageWidth = 210;
@@ -165,12 +175,13 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
   doc.text(brl(total), totalX + 72, totalLine, { align: "right" });
   y += totalHeight + 10;
 
-  if (quote.attachments?.length) {
-    ensureSpace(18 + quote.attachments.length * 5);
+  const includedAttachments = quote.attachments?.filter((attachment) => attachment.includeInPdf !== false) || [];
+  if (includedAttachments.length) {
+    ensureSpace(18 + includedAttachments.length * 5);
     textStyle(brand, 8.5, "bold");
     doc.text("ARQUIVOS DO PROJETO", margin, y);
     y += 6;
-    quote.attachments.forEach((attachment, index) => {
+    includedAttachments.forEach((attachment, index) => {
       ensureSpace(6);
       textStyle(ink, 8.8);
       doc.text(`${index + 1}. ${attachment.name}`, margin, y);
@@ -220,6 +231,31 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
   doc.text("Responsável pela marcenaria", margin + 36, y + 5, { align: "center" });
   doc.text("Cliente", pageWidth - margin - 36, y + 5, { align: "center" });
 
+  projectImages.forEach((image, index) => {
+    doc.addPage();
+    continuationHeader();
+    textStyle(brand, 8.5, "bold");
+    doc.text(`IMAGEM DO PROJETO ${index + 1} DE ${projectImages.length}`, margin, y);
+    y += 7;
+    try {
+      const properties = doc.getImageProperties(image.dataUrl);
+      const availableWidth = contentWidth;
+      const availableHeight = footerLimit - y - 10;
+      const scale = Math.min(availableWidth / properties.width, availableHeight / properties.height);
+      const imageWidth = properties.width * scale;
+      const imageHeight = properties.height * scale;
+      const imageX = margin + (availableWidth - imageWidth) / 2;
+      doc.setDrawColor(...line);
+      doc.roundedRect(imageX - 1, y - 1, imageWidth + 2, imageHeight + 2, 2, 2, "S");
+      doc.addImage(image.dataUrl, "JPEG", imageX, y, imageWidth, imageHeight, undefined, "FAST");
+      textStyle(muted, 8.5);
+      doc.text(doc.splitTextToSize(image.name, contentWidth)[0] || `Foto ${index + 1}`, margin, y + imageHeight + 6);
+    } catch {
+      textStyle(muted, 9);
+      doc.text(`Não foi possível inserir ${image.name}.`, margin, y + 5);
+    }
+  });
+
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page += 1) {
     doc.setPage(page);
@@ -228,5 +264,25 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
     doc.text(`Página ${page} de ${pages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
   }
 
-  doc.save(`${quote.number}-${cleanFileName(quote.client.name || "cliente")}.pdf`);
+  let blob = doc.output("blob");
+  if (projectDocuments.length) {
+    const { PDFDocument } = await import("pdf-lib");
+    const merged = await PDFDocument.load(await blob.arrayBuffer());
+    for (const projectDocument of projectDocuments) {
+      try {
+        const source = await PDFDocument.load(projectDocument.bytes);
+        const pagesToCopy = await merged.copyPages(source, source.getPageIndices());
+        pagesToCopy.forEach((page) => merged.addPage(page));
+      } catch { /* Keep the quote valid when an attached PDF is damaged. */ }
+    }
+    const mergedBytes = await merged.save();
+    const mergedBuffer = new ArrayBuffer(mergedBytes.byteLength);
+    new Uint8Array(mergedBuffer).set(mergedBytes);
+    blob = new Blob([mergedBuffer], { type: "application/pdf" });
+  }
+
+  return {
+    blob,
+    fileName: `${quote.number}-${cleanFileName(quote.client.name || "cliente")}.pdf`,
+  };
 }

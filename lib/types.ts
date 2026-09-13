@@ -21,11 +21,11 @@ export interface ClosingInfo {
 export interface CompanyInfo { name: string; document: string; contact: string; email: string; address: string; logo: string; }
 
 export interface ProjectAttachment {
-  id: string; name: string; path: string; mimeType: string; size: number; createdAt: string;
+  id: string; name: string; path: string; mimeType: string; size: number; createdAt: string; includeInPdf: boolean;
 }
 
 export interface Quote {
-  id: string; clientId: string; number: string; createdAt: string; updatedAt: string; pdfGeneratedAt?: string;
+  id: string; clientId: string; number: string; createdAt: string; updatedAt: string; pdfGeneratedAt?: string; pdfStoragePath?: string;
   client: ClientInfo; furniture: FurnitureItem[]; closing: ClosingInfo; attachments?: ProjectAttachment[];
 }
 
