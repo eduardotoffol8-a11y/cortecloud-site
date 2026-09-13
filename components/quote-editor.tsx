@@ -65,7 +65,7 @@ export function QuoteEditor({
 
   const updateClient = (field: keyof ClientInfo, value: string) => onChange({ ...quote, client: { ...quote.client, [field]: value } });
   const updateFurniture = (id: string, field: keyof FurnitureItem, value: string | number | boolean) => onChange({ ...quote, furniture: quote.furniture.map((item) => item.id === id ? { ...item, [field]: value } : item) });
-  const updateClosing = (field: keyof Quote["closing"], value: string) => onChange({ ...quote, closing: { ...quote.closing, [field]: value } });
+  const updateClosing = (field: keyof Quote["closing"], value: string | boolean) => onChange({ ...quote, closing: { ...quote.closing, [field]: value } });
 
   const addFurniture = () => onChange({ ...quote, furniture: [...quote.furniture, emptyFurniture()] });
   const duplicateFurniture = (item: FurnitureItem) => onChange({ ...quote, furniture: [...quote.furniture, { ...item, id: emptyFurniture().id, name: item.name ? `${item.name} — cópia` : "" }] });
@@ -161,7 +161,9 @@ export function QuoteEditor({
             <Field label="Prazo de entrega"><input className="field-input" value={quote.closing.deliveryTime} onChange={(event) => updateClosing("deliveryTime", event.target.value)} /></Field>
             <Field label="Validade do orçamento"><div className="relative"><input className="field-input !pr-14" value={quote.closing.validityDays} onChange={(event) => updateClosing("validityDays", event.target.value)} inputMode="numeric" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#71817d]">dias</span></div></Field>
             <Field label="Termos de garantia" className="md:col-span-2"><textarea className="field-input min-h-24 resize-y" value={quote.closing.warranty} onChange={(event) => updateClosing("warranty", event.target.value)} /></Field>
-            <Field label="Observações" className="md:col-span-2"><textarea className="field-input min-h-24 resize-y" value={quote.closing.notes} onChange={(event) => updateClosing("notes", event.target.value)} placeholder="Itens não inclusos, condições de instalação ou observações finais" /></Field>
+            <div className="md:col-span-2"><span className="field-label">Serviços incluídos</span><div className="grid gap-2 sm:grid-cols-3">{([['measurementIncluded','Medição técnica'],['deliveryIncluded','Entrega'],['installationIncluded','Montagem']] as const).map(([field,label]) => <label key={field} className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-xl border px-3 text-sm font-bold ${quote.closing[field] ? 'border-[#58a89f] bg-[#e9f5f3] text-[#0d665f]' : 'border-[#dce5e2] bg-white text-[#566661]'}`}><input type="checkbox" className="sr-only" checked={quote.closing[field]} onChange={(event) => updateClosing(field,event.target.checked)} /><span className={`grid h-5 w-5 place-items-center rounded-md border ${quote.closing[field] ? 'border-[#0f766e] bg-[#0f766e] text-white' : 'border-[#bdcbc8]'}`}>{quote.closing[field] && <Check size={13} strokeWidth={3}/>}</span>{label}</label>)}</div></div>
+            <Field label="Não está incluído" className="md:col-span-2"><textarea className="field-input min-h-20 resize-y" value={quote.closing.exclusions} onChange={(event) => updateClosing("exclusions", event.target.value)} placeholder="Ex.: elétrica, hidráulica, alvenaria e pintura" /></Field>
+            <Field label="Observações" className="md:col-span-2"><textarea className="field-input min-h-24 resize-y" value={quote.closing.notes} onChange={(event) => updateClosing("notes", event.target.value)} placeholder="Acesso ao local, responsabilidades do cliente ou observações finais" /></Field>
           </div>
         </div>
         <aside className="app-card h-fit overflow-hidden lg:sticky lg:top-6">
