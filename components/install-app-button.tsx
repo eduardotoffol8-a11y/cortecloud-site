@@ -1,7 +1,8 @@
 "use client";
 
-import { Download, MoreVertical, Share2, X } from "lucide-react";
+import { Building2, Download, MoreVertical, Share2, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { prepareCompanyInstallIcon, useDefaultInstallIcon } from "@/lib/pwa-icon";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,10 +15,11 @@ function runningStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
 }
 
-export function InstallAppButton() {
+export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyLogo?: string; onRequestLogo?: () => void }) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [showLogoChoice, setShowLogoChoice] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -40,9 +42,14 @@ export function InstallAppButton() {
     };
   }, []);
 
+  useEffect(() => {
+    if (companyLogo) void prepareCompanyInstallIcon(companyLogo).catch(() => undefined);
+    else void useDefaultInstallIcon().catch(() => undefined);
+  }, [companyLogo]);
+
   if (installed) return null;
 
-  const install = async () => {
+  const openNativeInstall = async () => {
     if (!promptEvent) {
       setShowHelp(true);
       return;
@@ -53,12 +60,38 @@ export function InstallAppButton() {
     setPromptEvent(null);
   };
 
+  const install = async () => {
+    if (!companyLogo) {
+      setShowLogoChoice(true);
+      return;
+    }
+    try { await prepareCompanyInstallIcon(companyLogo); } catch { await useDefaultInstallIcon(); }
+    await openNativeInstall();
+  };
+
+  const installWithDefault = async () => {
+    setShowLogoChoice(false);
+    await useDefaultInstallIcon();
+    await openNativeInstall();
+  };
+
   return (
     <>
       <button onClick={install} className="install-pill" aria-label="Instalar OrçaMóvel">
         <Download size={15} />
         <span>Instalar app</span>
       </button>
+      {showLogoChoice && (
+        <div className="fixed inset-0 z-[70] grid place-items-end bg-[#102521]/35 p-4 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="logo-choice-title">
+          <section className="app-card w-full max-w-sm p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4"><div><h2 id="logo-choice-title" className="text-lg font-extrabold">Ícone do aplicativo</h2><p className="mt-1 text-sm leading-6 text-[#657570]">Você pode usar a logo da sua marcenaria na tela do celular.</p></div><button onClick={() => setShowLogoChoice(false)} className="quiet-button !min-h-10 !w-10 !p-0" aria-label="Fechar"><X size={18}/></button></div>
+            <div className="mt-5 grid gap-3">
+              <button type="button" onClick={() => { setShowLogoChoice(false); onRequestLogo?.(); }} className="primary-button w-full"><Building2 size={18}/>Adicionar logo da empresa</button>
+              <button type="button" onClick={() => void installWithDefault()} className="secondary-button w-full"><Sparkles size={18}/>Usar ícone do OrçaMóvel</button>
+            </div>
+          </section>
+        </div>
+      )}
       {showHelp && (
         <div className="fixed inset-0 z-[70] grid place-items-end bg-[#102521]/25 p-4 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="install-title">
           <section className="app-card w-full max-w-sm p-5 shadow-2xl">
