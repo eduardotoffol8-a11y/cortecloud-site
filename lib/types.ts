@@ -15,10 +15,14 @@ export interface FurnitureItem {
 
 export interface ClosingInfo {
   paymentMethod: string; paymentTerms: string; deliveryTime: string; warranty: string; validityDays: string;
-  discount: string; notes: string; status: QuoteStatus;
+  discount: string; notes: string; exclusions: string; measurementIncluded: boolean; deliveryIncluded: boolean;
+  installationIncluded: boolean; status: QuoteStatus;
 }
 
-export interface CompanyInfo { name: string; document: string; contact: string; email: string; address: string; logo: string; }
+export interface CompanyInfo {
+  name: string; document: string; contact: string; email: string; address: string; logo: string;
+  primaryColor: string; secondaryColor: string;
+}
 
 export interface ProjectAttachment {
   id: string; name: string; path: string; mimeType: string; size: number; createdAt: string; includeInPdf: boolean;
