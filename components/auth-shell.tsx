@@ -15,7 +15,7 @@ function LoadingScreen() {
     <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-6">
       <div className="text-center">
         <div className="mx-auto mb-4 w-fit"><BrandMark /></div>
-        <LoaderCircle className="mx-auto animate-spin text-[#0f766e]" size={24} />
+        <LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={24} />
       </div>
     </main>
   );
@@ -63,8 +63,16 @@ function AuthScreen() {
     setLoading("passkey");
     setError("");
     setMessage("");
-    const { error: passkeyError } = await supabase.auth.signInWithPasskey();
-    if (passkeyError) setError(passkeyError.name === "NotAllowedError" ? "A entrada foi cancelada." : "Não encontramos uma digital cadastrada neste aparelho. Use o e-mail abaixo.");
+    try {
+      const { error: passkeyError } = await supabase.auth.signInWithPasskey();
+      if (passkeyError) {
+        if (passkeyError.code === "passkey_disabled") setError("A biometria ainda não está liberada no servidor. Use o e-mail abaixo.");
+        else if (passkeyError.name === "NotAllowedError") setError("A entrada foi cancelada ou não há uma digital cadastrada para este site.");
+        else setError("Não encontramos um acesso biométrico válido. Use o e-mail abaixo e ative a digital nos Ajustes.");
+      }
+    } catch {
+      setError("Este navegador não permitiu usar a biometria. Use o e-mail abaixo.");
+    }
     setLoading("");
   };
 
@@ -74,7 +82,7 @@ function AuthScreen() {
       <div className="mx-auto w-full max-w-md">
         <div className="mb-7 flex justify-center"><BrandMark /></div>
         <section className="app-card overflow-hidden">
-          <div className="bg-[#123d39] px-6 py-6 text-white">
+          <div className="bg-[var(--brand-dark)] px-6 py-6 text-white">
             <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/12"><ShieldCheck size={23} /></div>
             <h1 className="text-2xl font-extrabold tracking-[-0.035em]">Entre no OrçaMóvel</h1>
             <p className="mt-1.5 text-sm leading-6 text-[#c8e2de]">Sem criar ou memorizar senha.</p>
@@ -98,7 +106,7 @@ function AuthScreen() {
             </form>
           </details>
         </section>
-        <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm font-semibold text-[#657570]"><CalendarClock size={17} className="text-[#0f766e]" />30 dias grátis · sem cartão</p>
+        <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm font-semibold text-[#657570]"><CalendarClock size={17} className="text-[var(--brand)]" />30 dias grátis · sem cartão</p>
       </div>
     </main>
   );
