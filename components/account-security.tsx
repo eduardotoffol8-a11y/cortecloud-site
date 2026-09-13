@@ -1,11 +1,11 @@
 "use client";
 
-import { KeyRound, LoaderCircle, LogOut, ShieldAlert, Trash2 } from "lucide-react";
+import { BadgeDollarSign, KeyRound, LoaderCircle, LogOut, ShieldAlert, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { PasskeyCard } from "./passkey-card";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function AccountSecurity({ email, onSignOut }: { email: string; onSignOut: () => void }) {
+export function AccountSecurity({ email, onSignOut, onOpenPlans }: { email: string; onSignOut: () => void; onOpenPlans: () => void }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -49,10 +49,13 @@ export function AccountSecurity({ email, onSignOut }: { email: string; onSignOut
 
   return (
     <div className="mt-5 space-y-5">
+      <section className="app-card p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><BadgeDollarSign size={22} /></span><div><h2 className="font-bold">Plano do OrçaMóvel</h2><p className="mt-1 text-sm leading-5 text-[#6f7f7b]">Veja os planos ou aproveite a oferta vitalícia.</p></div></div><button type="button" onClick={onOpenPlans} className="primary-button shrink-0"><BadgeDollarSign size={17} />Ver planos</button></div>
+      </section>
       <PasskeyCard />
       <section className="app-card p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#edf5f3] text-[#0f766e]"><KeyRound size={22} /></span>
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#edf5f3] text-[var(--brand)]"><KeyRound size={22} /></span>
           <div><h2 className="font-bold">Senha opcional</h2><p className="mt-1 text-sm leading-5 text-[#6f7f7b]">Só configure se quiser outra forma de entrar. O link por e-mail continua funcionando.</p></div>
         </div>
         <form onSubmit={savePassword} className="mt-4 grid gap-3 sm:grid-cols-2">
