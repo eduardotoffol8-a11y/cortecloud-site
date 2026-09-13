@@ -47,6 +47,7 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
       }
       if (detail === "Payments not configured") setMessage("O pagamento ainda não está configurado.");
       else if (detail === "Unauthorized") setMessage("Sua sessão expirou. Entre novamente e tente pagar.");
+      else if (detail?.toLowerCase().includes("policy returned unauthorized")) setMessage("A credencial do Mercado Pago está bloqueada ou sem permissão. Ative ou renove as credenciais de produção e tente novamente.");
       else setMessage(detail ? `O Mercado Pago não aceitou a solicitação: ${detail}` : "Não foi possível abrir o pagamento. Atualize a página e tente novamente.");
       setLoading("");
       return;
