@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Fingerprint, LoaderCircle, LogIn, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, Fingerprint, KeyRound, LoaderCircle, LogIn, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
@@ -27,14 +27,17 @@ function AuthScreen() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState<"passkey" | "email" | "signup" | "">("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [usePassword, setUsePassword] = useState(false);
+  const [loading, setLoading] = useState<"passkey" | "email" | "password" | "signup" | "">("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!supabase) return;
-    setLoading(mode === "signup" ? "signup" : "email");
+    setLoading(mode === "signup" ? "signup" : usePassword ? "password" : "email");
     setError("");
     setMessage("");
 
@@ -48,12 +51,18 @@ function AuthScreen() {
       });
       if (result.error) setError(result.error.message);
       else if (!result.data.session) setMessage("Abra o link que enviamos para entrar. Você não precisará criar uma senha.");
+    } else if (usePassword) {
+      const result = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (result.error) setError(result.error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : result.error.message);
     } else {
       const result = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
       });
-      if (result.error) setError(result.error.message.includes("Signups not allowed") ? "Não encontramos uma conta com este e-mail." : result.error.message);
+      if (result.error) {
+        if (result.error.message.toLowerCase().includes("rate limit")) setError("Muitos links foram solicitados. Aguarde alguns minutos ou entre com sua senha antiga.");
+        else setError(result.error.message.includes("Signups not allowed") ? "Não encontramos uma conta com este e-mail." : result.error.message);
+      }
       else setMessage("Pronto. Enviamos um link de acesso para o seu e-mail.");
     }
     setLoading("");
@@ -92,10 +101,12 @@ function AuthScreen() {
               <label><span className="field-label">Seu nome</span><div className="relative"><UserRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required className="field-input !pl-11" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nome completo" autoComplete="name" /></div></label>
             )}
             <label><span className="field-label">E-mail</span><div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required type="email" className="field-input !pl-11" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" autoComplete="email" /></div></label>
+            {mode === "login" && usePassword && <label><span className="field-label">Senha antiga</span><div className="relative"><KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required type={showPassword ? "text" : "password"} className="field-input !pl-11 !pr-12" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Sua senha cadastrada" autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-1.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-[#6f7e7b]" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>}
             {error && <p role="alert" className="rounded-xl bg-rose-50 px-3.5 py-3 text-sm font-semibold text-rose-700">{error}</p>}
             {message && <p role="status" className="rounded-xl bg-emerald-50 px-3.5 py-3 text-sm font-semibold leading-5 text-emerald-700">{message}</p>}
-            <button disabled={Boolean(loading)} className={mode === "login" ? "secondary-button w-full" : "primary-button w-full"}><LogIn size={18} />{loading === "email" || loading === "signup" ? "Aguarde…" : mode === "login" ? "Enviar link de acesso" : "Criar conta sem senha"}</button>
-            <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setMessage(""); }} className="quiet-button w-full">{mode === "login" ? "Ainda não tenho conta" : "Já tenho uma conta"}</button>
+            <button disabled={Boolean(loading)} className={mode === "login" ? "secondary-button w-full" : "primary-button w-full"}><LogIn size={18} />{loading === "email" || loading === "password" || loading === "signup" ? "Aguarde…" : mode === "login" ? usePassword ? "Entrar com senha" : "Enviar link de acesso" : "Criar conta sem senha"}</button>
+            {mode === "login" && <button type="button" onClick={() => { setUsePassword((value) => !value); setError(""); setMessage(""); }} className="quiet-button w-full">{usePassword ? "Prefiro receber um link no e-mail" : "Entrar com minha senha antiga"}</button>}
+            <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setUsePassword(false); setPassword(""); setError(""); setMessage(""); }} className="quiet-button w-full">{mode === "login" ? "Ainda não tenho conta" : "Já tenho uma conta"}</button>
           </form>
         </section>
         <p className="mt-5 flex items-center justify-center gap-2 text-center text-sm font-semibold text-[#657570]"><CalendarClock size={17} className="text-[#0f766e]" />30 dias grátis · sem cartão</p>
