@@ -28,7 +28,8 @@ export function CompanyForm({
   onboarding?: boolean;
 }) {
   const logoInput = useRef<HTMLInputElement>(null);
-  return (
+
+  const form = (
     <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
       <div className="app-card h-fit p-5">
         <span className="field-label">Logo da empresa</span>
@@ -67,6 +68,21 @@ export function CompanyForm({
         </div>
       </div>
     </div>
+  );
+
+  if (onboarding) return form;
+
+  return (
+    <details className="app-card overflow-hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 [&::-webkit-details-marker]:hidden">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><Building2 size={20} /></span>
+          <div className="min-w-0"><p className="font-bold">Identidade e aparência</p><p className="mt-0.5 truncate text-sm text-[#74837f]">{company.name || "Configure sua marcenaria"} · logo, contato e cores dos PDFs</p></div>
+        </div>
+        <span className="shrink-0 text-sm font-bold text-[var(--brand)]">Editar</span>
+      </summary>
+      <div className="border-t border-[#e3ebe9] bg-[#f8fbfa] p-3 sm:p-5">{form}</div>
+    </details>
   );
 }
 
