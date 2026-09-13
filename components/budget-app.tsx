@@ -373,7 +373,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   if (onboarding) return (
     <main className="min-h-screen bg-[#f2f6f5] px-4 py-7 sm:px-6">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between"><BrandMark /><span className="rounded-full bg-[#dff1ed] px-3 py-1.5 text-xs font-bold text-[#0f6d65]">1ª configuração</span></div>
+        <div className="mb-8 flex items-center justify-between gap-2"><BrandMark /><div className="flex items-center gap-2"><InstallAppButton /><span className="hidden rounded-full bg-[#dff1ed] px-3 py-1.5 text-xs font-bold text-[#0f6d65] sm:inline">1ª configuração</span></div></div>
         <PageHeading eyebrow="Antes de começar" title="Configure sua marcenaria" />
         <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} onboarding />
       </div>

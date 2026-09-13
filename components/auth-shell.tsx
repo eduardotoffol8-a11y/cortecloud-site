@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
 import { BudgetApp } from "./budget-app";
+import { InstallAppButton } from "./install-app-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountProfile } from "@/lib/types";
 
@@ -61,6 +62,7 @@ function AuthScreen() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_15%_0%,rgba(15,118,110,0.13),transparent_25rem)] px-4 py-8 sm:grid sm:place-items-center">
+      <div className="fixed right-4 top-4 z-20"><InstallAppButton /></div>
       <div className="mx-auto w-full max-w-md">
         <div className="mb-7 flex justify-center"><BrandMark /></div>
         <section className="app-card overflow-hidden">
@@ -90,6 +92,7 @@ function AuthScreen() {
 function TrialExpired({ email, onSignOut }: { email: string; onSignOut: () => void }) {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-5">
+      <div className="fixed right-4 top-4 z-20"><InstallAppButton /></div>
       <section className="app-card w-full max-w-md p-6 text-center sm:p-8">
         <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-700"><CalendarClock size={28} /></div>
         <h1 className="text-2xl font-extrabold tracking-[-0.035em]">Seu período de teste terminou</h1>
