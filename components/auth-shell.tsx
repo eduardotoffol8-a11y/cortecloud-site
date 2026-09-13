@@ -97,7 +97,7 @@ function TrialExpired({ email, onSignOut }: { email: string; onSignOut: () => vo
         <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-700"><CalendarClock size={28} /></div>
         <h1 className="text-2xl font-extrabold tracking-[-0.035em]">Seu período de teste terminou</h1>
         <p className="mt-3 text-sm leading-6 text-[#657570]">A conta <strong>{email}</strong> e seus dados continuam protegidos. Ative um plano para voltar a criar e editar orçamentos.</p>
-        <button className="primary-button mt-6 w-full">Ver opções de assinatura</button>
+        <div className="mt-6 rounded-xl bg-[#edf5f3] px-4 py-3 text-sm font-semibold text-[#285d57]">A ativação do plano é feita pelo administrador.</div>
         <button onClick={onSignOut} className="quiet-button mt-2 w-full">Sair da conta</button>
       </section>
     </main>
