@@ -89,6 +89,7 @@ function normalizeQuote(input: Quote): Quote {
       measurementIncluded: input.closing.measurementIncluded !== false,
       deliveryIncluded: input.closing.deliveryIncluded !== false,
       installationIncluded: input.closing.installationIncluded !== false,
+      showItemPrices: input.closing.showItemPrices !== false,
     },
     attachments: (input.attachments || []).map((attachment) => ({ ...attachment, includeInPdf: attachment.includeInPdf !== false })),
   };
