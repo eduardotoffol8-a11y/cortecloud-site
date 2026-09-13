@@ -6,6 +6,9 @@
   --line: #dce5e2;
   --brand: #0f766e;
   --brand-dark: #0c5f59;
+  --brand-soft: #e7f3f1;
+  --brand-border: #9fc9c3;
+  --accent: #b5914e;
   --surface: #ffffff;
   --canvas: #f2f6f5;
 }
@@ -16,14 +19,14 @@ html { background: var(--canvas); }
 body {
   min-height: 100vh;
   margin: 0;
-  background: radial-gradient(circle at 12% 0%, rgba(15, 118, 110, 0.06), transparent 24rem), var(--canvas);
+  background: radial-gradient(circle at 12% 0%, var(--brand-soft), transparent 24rem), var(--canvas);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-::selection { background: #bde8e2; color: #123b37; }
+::selection { background: var(--brand-soft); color: var(--ink); }
 
 .app-card {
   border: 1px solid rgba(209, 222, 218, 0.78);
@@ -56,7 +59,7 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .field-input::placeholder { color: #9aaba7; }
 .field-input:hover { border-color: #bdcdc9; }
-.field-input:focus { border-color: #3a9d94; background: #fff; box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.11); }
+.field-input:focus { border-color: var(--brand); background: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent); }
 
 .primary-button, .secondary-button, .quiet-button {
   display: inline-flex;
@@ -71,7 +74,7 @@ button { -webkit-tap-highlight-color: transparent; }
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.primary-button { border: 1px solid var(--brand); background: var(--brand); color: white; box-shadow: 0 8px 20px rgba(15, 118, 110, 0.18); }
+.primary-button { border: 1px solid var(--brand); background: var(--brand); color: white; box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 22%, transparent); }
 .primary-button:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
 .primary-button:active, .secondary-button:active, .quiet-button:active { transform: scale(0.98); }
 .primary-button:disabled { cursor: not-allowed; opacity: 0.55; }
@@ -85,18 +88,18 @@ button { -webkit-tap-highlight-color: transparent; }
   min-height: 2.35rem;
   align-items: center;
   gap: 0.4rem;
-  border: 1px solid #cfe0dc;
+  border: 1px solid var(--brand-border);
   border-radius: 999px;
-  background: rgba(239, 247, 245, 0.92);
+  background: var(--brand-soft);
   padding: 0.45rem 0.72rem;
-  color: #0d6d65;
+  color: var(--brand);
   font-size: 0.78rem;
   font-weight: 800;
   box-shadow: 0 5px 16px rgba(22, 67, 61, 0.08);
   transition: background 150ms ease, transform 150ms ease;
 }
 
-.install-pill:hover { background: #e2f2ef; }
+.install-pill:hover { filter: brightness(0.97); }
 .install-pill:active { transform: scale(0.98); }
 
 .nav-safe { padding-bottom: max(0.55rem, env(safe-area-inset-bottom)); }
