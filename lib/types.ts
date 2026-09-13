@@ -1,6 +1,7 @@
 export type AppView = "dashboard" | "clients" | "quote" | "documents" | "settings";
 export type QuoteStatus = "draft" | "pending" | "approved" | "declined";
 export type SubscriptionStatus = "trial" | "active" | "past_due" | "canceled";
+export type PlanType = "monthly" | "annual" | "lifetime";
 
 export interface ClientInfo {
   name: string; phone: string; email: string; document: string; projectName: string; address: string;
@@ -33,4 +34,6 @@ export interface AccountProfile {
   email: string;
   trialEndsAt: string;
   subscriptionStatus: SubscriptionStatus;
+  planType: PlanType | null;
+  accessExpiresAt: string | null;
 }

@@ -2,12 +2,13 @@
 
 import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
-  FileImage, Folder, FolderOpen, Home, LogOut, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2,
+  FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { CompanyForm } from "./company-form";
 import { InstallAppButton } from "./install-app-button";
+import { AccountSecurity } from "./account-security";
 import { PasskeyCard } from "./passkey-card";
 import { QuoteEditor } from "./quote-editor";
 import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, QuoteStatus } from "@/lib/types";
@@ -429,8 +430,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     <section className="view-enter">
       <PageHeading eyebrow="Perfil" title="Dados da marcenaria" />
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
-      <div className="mt-5"><PasskeyCard /></div>
-      <div className="mt-5 app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-bold">Conta</p><p className="mt-1 text-sm text-[#74837f]">{userEmail}</p></div><button onClick={onSignOut} className="secondary-button"><LogOut size={17} />Sair da conta</button></div>
+      <AccountSecurity email={userEmail} onSignOut={onSignOut} />
     </section>
   );
 
