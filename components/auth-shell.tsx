@@ -60,7 +60,10 @@ function AuthScreen() {
         options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
       });
       if (result.error) {
-        if (result.error.message.toLowerCase().includes("rate limit")) setError("Muitos links foram solicitados. Aguarde alguns minutos ou entre com sua senha antiga.");
+        if (result.error.message.toLowerCase().includes("rate limit")) {
+          setUsePassword(true);
+          setError("Muitos links foram solicitados. Aguarde alguns minutos ou entre com sua senha antiga.");
+        }
         else setError(result.error.message.includes("Signups not allowed") ? "Não encontramos uma conta com este e-mail." : result.error.message);
       }
       else setMessage("Pronto. Enviamos um link de acesso para o seu e-mail.");
