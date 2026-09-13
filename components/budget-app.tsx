@@ -2,14 +2,15 @@
 
 import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
-  Folder, FolderOpen, Home, LogOut, MoreHorizontal, PencilLine, Plus, Search, Settings, Trash2,
+  FileImage, Folder, FolderOpen, Home, LogOut, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { CompanyForm } from "./company-form";
 import { InstallAppButton } from "./install-app-button";
+import { PasskeyCard } from "./passkey-card";
 import { QuoteEditor } from "./quote-editor";
-import type { AccountProfile, AppView, CompanyInfo, Quote, QuoteStatus } from "@/lib/types";
+import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, QuoteStatus } from "@/lib/types";
 import { brl, createEmptyQuote, emptyCompany, nextQuoteNumber, quoteTotal, statusLabel } from "@/lib/quote";
 import { generateQuotePdf } from "@/lib/pdf";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -55,7 +56,11 @@ function isUuid(value?: string) {
 }
 
 function normalizeQuote(input: Quote): Quote {
-  return { ...input, id: isUuid(input.id) ? input.id : crypto.randomUUID(), clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID() };
+  return { ...input, id: isUuid(input.id) ? input.id : crypto.randomUUID(), clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID(), attachments: input.attachments || [] };
+}
+
+function safeFileName(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-100) || "arquivo";
 }
 
 type ClientFolder = { id: string; info: Quote["client"]; quotes: Quote[]; updatedAt: string };
@@ -71,6 +76,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [onboarding, setOnboarding] = useState(false);
   const [notice, setNotice] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [menuQuote, setMenuQuote] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -96,16 +102,21 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       let needsOnboarding = true;
 
       if (supabase) {
-        const [companyResult, quotesResult] = await Promise.all([
+        const [companyResult, quotesResult, attachmentsResult] = await Promise.all([
           supabase.from("company_profiles").select("name,document,contact,email,address,logo_data").eq("user_id", userId).maybeSingle(),
           supabase.from("quotes").select("payload,pdf_generated_at").eq("user_id", userId).order("updated_at", { ascending: false }),
+          supabase.from("project_attachments").select("id,quote_id,file_name,storage_path,mime_type,size_bytes,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
         ]);
         if (companyResult.data?.name) {
           nextCompany = { name: companyResult.data.name, document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "" };
           needsOnboarding = false;
         }
         if (quotesResult.data?.length) {
-          nextHistory = quotesResult.data.map((row) => normalizeQuote({ ...(row.payload as Quote), pdfGeneratedAt: row.pdf_generated_at || (row.payload as Quote).pdfGeneratedAt }));
+          nextHistory = quotesResult.data.map((row) => {
+            const payload = row.payload as Quote;
+            const attachments = (attachmentsResult.data || []).filter((file) => file.quote_id === payload.id).map((file) => ({ id: file.id, name: file.file_name, path: file.storage_path, mimeType: file.mime_type, size: Number(file.size_bytes), createdAt: file.created_at }));
+            return normalizeQuote({ ...payload, attachments, pdfGeneratedAt: row.pdf_generated_at || payload.pdfGeneratedAt });
+          });
         }
       }
 
@@ -239,9 +250,71 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     setHistory(remaining);
     setMenuQuote(null);
     if (supabase) {
+      const paths = selected?.attachments?.map((attachment) => attachment.path) || [];
+      if (paths.length) await supabase.storage.from("project-files").remove(paths);
       await supabase.from("quotes").delete().eq("id", id).eq("user_id", userId);
       if (selected && !remaining.some((item) => item.clientId === selected.clientId)) await supabase.from("clients").delete().eq("id", selected.clientId).eq("user_id", userId);
     }
+  };
+
+  const uploadProjectFiles = async (files: FileList) => {
+    if (!supabase) return;
+    if (!quote.client.name.trim()) return setNotice("Informe o nome do cliente antes de anexar arquivos.");
+    const selectedFiles = Array.from(files);
+    const invalid = selectedFiles.find((file) => !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type) || file.size > 10_485_760);
+    if (invalid) return setNotice("Use JPG, PNG, WebP ou PDF com até 10 MB.");
+    setIsUploading(true);
+    const saved = { ...quote, updatedAt: new Date().toISOString() };
+    const additions: ProjectAttachment[] = [];
+    try {
+      await persistQuote(saved);
+      for (const file of selectedFiles) {
+        const id = crypto.randomUUID();
+        const path = `${userId}/${saved.clientId}/${saved.id}/${id}-${safeFileName(file.name)}`;
+        const upload = await supabase.storage.from("project-files").upload(path, file, { contentType: file.type, upsert: false });
+        if (upload.error) throw upload.error;
+        const createdAt = new Date().toISOString();
+        const metadata = await supabase.from("project_attachments").insert({ id, user_id: userId, client_id: saved.clientId, quote_id: saved.id, file_name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size, created_at: createdAt });
+        if (metadata.error) {
+          await supabase.storage.from("project-files").remove([path]);
+          throw metadata.error;
+        }
+        additions.push({ id, name: file.name, path, mimeType: file.type, size: file.size, createdAt });
+      }
+      const updated = { ...saved, attachments: [...(saved.attachments || []), ...additions], updatedAt: new Date().toISOString() };
+      await persistQuote(updated);
+      setQuote(updated);
+      setHistory((current) => current.some((item) => item.id === updated.id) ? current.map((item) => item.id === updated.id ? updated : item) : [updated, ...current]);
+      setNotice(`${additions.length} ${additions.length === 1 ? "arquivo adicionado" : "arquivos adicionados"}.`);
+    } catch {
+      setNotice("Não foi possível enviar o arquivo. Tente novamente.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const downloadAttachment = async (attachment: ProjectAttachment) => {
+    if (!supabase) return;
+    const { data, error } = await supabase.storage.from("project-files").download(attachment.path);
+    if (error || !data) return setNotice("Não foi possível abrir este arquivo.");
+    const url = URL.createObjectURL(data);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = attachment.name;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  };
+
+  const removeAttachment = async (attachment: ProjectAttachment) => {
+    if (!supabase || !window.confirm(`Excluir ${attachment.name}?`)) return;
+    const storageResult = await supabase.storage.from("project-files").remove([attachment.path]);
+    if (storageResult.error) return setNotice("Não foi possível excluir este arquivo.");
+    await supabase.from("project_attachments").delete().eq("id", attachment.id).eq("user_id", userId);
+    const updated = { ...quote, attachments: (quote.attachments || []).filter((file) => file.id !== attachment.id), updatedAt: new Date().toISOString() };
+    setQuote(updated);
+    setHistory((current) => current.map((item) => item.id === updated.id ? updated : item));
+    await persistQuote(updated);
+    setNotice("Arquivo excluído.");
   };
 
   const handleLogo = (file?: File) => {
@@ -322,6 +395,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
           <div className="app-card p-4 md:col-span-2"><p className="text-xs font-bold uppercase tracking-wide text-[#81908c]">Local da obra</p><p className="mt-2 text-sm font-semibold leading-6">{selectedClient.info.address || "Não informado"}</p></div>
         </div>
         <div className="app-card overflow-hidden"><div className="border-b border-[#e3ebe9] px-5 py-4"><h2 className="font-bold">Orçamentos</h2></div><div className="divide-y divide-[#e7eeec]">{selectedClient.quotes.map((item) => <DocumentRow key={item.id} item={item} onOpen={() => openQuote(item)} onDownload={() => void downloadSavedPdf(item)} showDownload={Boolean(item.pdfGeneratedAt)} />)}</div></div>
+        {selectedClient.quotes.some((item) => item.attachments?.length) && <div className="app-card mt-5 overflow-hidden"><div className="flex items-center gap-2 border-b border-[#e3ebe9] px-5 py-4"><Paperclip size={18} className="text-[#0f766e]" /><h2 className="font-bold">Arquivos do projeto</h2></div><div className="divide-y divide-[#e7eeec]">{selectedClient.quotes.flatMap((item) => item.attachments || []).map((attachment) => <ClientAttachmentRow key={attachment.id} attachment={attachment} onDownload={() => void downloadAttachment(attachment)} />)}</div></div>}
       </section>
     );
     return (
@@ -355,6 +429,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     <section className="view-enter">
       <PageHeading eyebrow="Perfil" title="Dados da marcenaria" />
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
+      <div className="mt-5"><PasskeyCard /></div>
       <div className="mt-5 app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-bold">Conta</p><p className="mt-1 text-sm text-[#74837f]">{userEmail}</p></div><button onClick={onSignOut} className="secondary-button"><LogOut size={17} />Sair da conta</button></div>
     </section>
   );
@@ -376,6 +451,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         <div className="mb-8 flex items-center justify-between gap-2"><BrandMark /><div className="flex items-center gap-2"><InstallAppButton /><span className="hidden rounded-full bg-[#dff1ed] px-3 py-1.5 text-xs font-bold text-[#0f6d65] sm:inline">1ª configuração</span></div></div>
         <PageHeading eyebrow="Antes de começar" title="Configure sua marcenaria" />
         <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} onboarding />
+        <div className="mt-5"><PasskeyCard compact /></div>
       </div>
       {notice && <Notice text={notice} />}
     </main>
@@ -387,7 +463,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#f1f6f4] px-3 py-1.5 text-xs font-bold text-[#64746f] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton /></div></div></header>
-      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} /> : views[view]()}</main>
+      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} isUploading={isUploading} /> : views[view]()}</main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t border-[#d5e1de] bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[#e7f3f1] text-[#0c6d65]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[#0f766e] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
       {notice && <Notice text={notice} />}
     </div>
@@ -418,6 +494,12 @@ function DocumentRow({ item, onOpen, onDownload, showDownload }: { item: Quote; 
     <button onClick={onOpen} className="min-w-0 flex-1 text-left"><p className="truncate font-bold">{item.client.name || "Cliente sem nome"}</p><p className="mt-1 truncate text-sm text-[#74837f]">{item.number} · {formatDate(item.pdfGeneratedAt || item.updatedAt)} · {brl(quoteTotal(item))}</p></button>
     <div className="flex gap-2">{showDownload && <button onClick={onDownload} className="secondary-button !min-h-10 !px-3"><Download size={16} />Baixar</button>}<button onClick={onOpen} className="quiet-button !min-h-10 !px-3">Abrir</button></div>
   </article>;
+}
+
+function ClientAttachmentRow({ attachment, onDownload }: { attachment: ProjectAttachment; onDownload: () => void }) {
+  const Icon = attachment.mimeType === "application/pdf" ? FileText : FileImage;
+  const size = attachment.size < 1_000_000 ? `${Math.ceil(attachment.size / 1_000)} KB` : `${(attachment.size / 1_000_000).toFixed(1)} MB`;
+  return <button type="button" onClick={onDownload} className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#f8fbfa] sm:px-5"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e7f3f1] text-[#0f766e]"><Icon size={19} /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold">{attachment.name}</span><span className="text-xs text-[#7b8b87]">{size}</span></span><Download size={17} className="shrink-0 text-[#758580]" /></button>;
 }
 
 function Notice({ text }: { text: string }) {

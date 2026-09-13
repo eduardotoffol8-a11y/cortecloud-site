@@ -165,6 +165,20 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
   doc.text(brl(total), totalX + 72, totalLine, { align: "right" });
   y += totalHeight + 10;
 
+  if (quote.attachments?.length) {
+    ensureSpace(18 + quote.attachments.length * 5);
+    textStyle(brand, 8.5, "bold");
+    doc.text("ARQUIVOS DO PROJETO", margin, y);
+    y += 6;
+    quote.attachments.forEach((attachment, index) => {
+      ensureSpace(6);
+      textStyle(ink, 8.8);
+      doc.text(`${index + 1}. ${attachment.name}`, margin, y);
+      y += 5;
+    });
+    y += 4;
+  }
+
   ensureSpace(63);
   textStyle(brand, 8.5, "bold");
   doc.text("CONDIÇÕES COMERCIAIS", margin, y);

@@ -19,9 +19,13 @@ export interface ClosingInfo {
 
 export interface CompanyInfo { name: string; document: string; contact: string; email: string; address: string; logo: string; }
 
+export interface ProjectAttachment {
+  id: string; name: string; path: string; mimeType: string; size: number; createdAt: string;
+}
+
 export interface Quote {
   id: string; clientId: string; number: string; createdAt: string; updatedAt: string; pdfGeneratedAt?: string;
-  client: ClientInfo; furniture: FurnitureItem[]; closing: ClosingInfo;
+  client: ClientInfo; furniture: FurnitureItem[]; closing: ClosingInfo; attachments?: ProjectAttachment[];
 }
 
 export interface AccountProfile {

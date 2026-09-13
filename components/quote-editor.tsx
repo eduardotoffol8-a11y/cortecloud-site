@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  Check, ChevronLeft, ChevronRight, CircleDollarSign, Copy, Download, PackagePlus, Plus, Save, Trash2,
+  Check, ChevronLeft, ChevronRight, CircleDollarSign, Copy, Download, FileImage, FileText,
+  LoaderCircle, PackagePlus, Paperclip, Plus, Save, Trash2, Upload,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { ClientInfo, FurnitureItem, Quote } from "@/lib/types";
+import { useMemo, useRef, useState } from "react";
+import type { ClientInfo, FurnitureItem, ProjectAttachment, Quote } from "@/lib/types";
 import { brl, emptyFurniture, quoteSubtotal, quoteTotal, statusLabel } from "@/lib/quote";
 
 function Field({ label, className = "", children }: { label: string; className?: string; children: React.ReactNode }) {
@@ -40,14 +41,23 @@ export function QuoteEditor({
   onSave,
   onGenerate,
   isGenerating,
+  onUpload,
+  onDownloadAttachment,
+  onRemoveAttachment,
+  isUploading,
 }: {
   quote: Quote;
   onChange: (quote: Quote) => void;
   onSave: () => void;
   onGenerate: () => void;
   isGenerating: boolean;
+  onUpload: (files: FileList) => void;
+  onDownloadAttachment: (attachment: ProjectAttachment) => void;
+  onRemoveAttachment: (attachment: ProjectAttachment) => void;
+  isUploading: boolean;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const fileInput = useRef<HTMLInputElement>(null);
   const subtotal = useMemo(() => quoteSubtotal(quote), [quote]);
   const total = useMemo(() => quoteTotal(quote), [quote]);
 
@@ -121,6 +131,17 @@ export function QuoteEditor({
           </article>
         ))}</div>
         <button type="button" onClick={addFurniture} className="mt-4 flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#9fbdb7] bg-[#eff7f5] font-bold text-[#0f6b63] transition-colors hover:bg-[#e5f2ef]"><Plus size={19} />Adicionar outro móvel</button>
+        <section className="app-card mt-4 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#e6f3f1] text-[#0f766e]"><Paperclip size={20} /></span>
+            <div className="min-w-0 flex-1"><h2 className="font-bold">Fotos e arquivos do projeto</h2><p className="mt-1 text-sm leading-5 text-[#72817e]">JPG, PNG, WebP ou PDF · até 10 MB por arquivo</p></div>
+          </div>
+          <input ref={fileInput} type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden" onChange={(event) => { if (event.target.files?.length) onUpload(event.target.files); event.target.value = ""; }} />
+          <button type="button" onClick={() => fileInput.current?.click()} disabled={isUploading} className="secondary-button mt-4 w-full">
+            {isUploading ? <LoaderCircle className="animate-spin" size={18} /> : <Upload size={18} />}{isUploading ? "Enviando…" : "Adicionar fotos ou PDF"}
+          </button>
+          {!!quote.attachments?.length && <div className="mt-3 divide-y divide-[#e1e9e7] rounded-xl border border-[#e1e9e7]">{quote.attachments.map((attachment) => <AttachmentRow key={attachment.id} attachment={attachment} onDownload={() => onDownloadAttachment(attachment)} onRemove={() => onRemoveAttachment(attachment)} />)}</div>}
+        </section>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between"><button type="button" onClick={() => setStep(1)} className="secondary-button"><ChevronLeft size={18} />Voltar</button><button type="button" onClick={() => setStep(3)} className="primary-button">Ir para fechamento <ChevronRight size={18} /></button></div>
       </section>
     );
@@ -154,4 +175,10 @@ export function QuoteEditor({
       <button type="button" onClick={() => setStep(2)} className="secondary-button mt-5"><ChevronLeft size={18} />Voltar para móveis</button>
     </section>
   );
+}
+
+function AttachmentRow({ attachment, onDownload, onRemove }: { attachment: ProjectAttachment; onDownload: () => void; onRemove: () => void }) {
+  const Icon = attachment.mimeType === "application/pdf" ? FileText : FileImage;
+  const size = attachment.size < 1_000_000 ? `${Math.ceil(attachment.size / 1_000)} KB` : `${(attachment.size / 1_000_000).toFixed(1)} MB`;
+  return <div className="flex items-center gap-3 px-3 py-2.5"><Icon size={19} className="shrink-0 text-[#0f766e]" /><button type="button" onClick={onDownload} className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-bold">{attachment.name}</span><span className="text-xs text-[#7b8b87]">{size}</span></button><button type="button" onClick={onRemove} className="quiet-button !min-h-9 !w-9 !p-0 !text-rose-600" aria-label={`Excluir ${attachment.name}`}><Trash2 size={16} /></button></div>;
 }
