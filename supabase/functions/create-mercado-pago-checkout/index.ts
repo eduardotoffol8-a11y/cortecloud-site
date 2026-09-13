@@ -1,10 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
+const lifetimePromotionEndsAt = new Date("2026-09-21T03:59:59.000Z").getTime();
 const plans = {
   monthly: { title: "OrçaMóvel Mensal", price: 9.99 },
   annual: { title: "OrçaMóvel Anual", price: 99.99 },
-  lifetime: { title: "OrçaMóvel Vitalício", price: 249.99 },
+  lifetime: { title: "OrçaMóvel Vitalício", price: Date.now() <= lifetimePromotionEndsAt ? 149.99 : 249.99 },
 } as const;
 
 Deno.serve(async (request) => {
