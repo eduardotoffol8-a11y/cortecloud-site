@@ -23,18 +23,26 @@ const imageFormat = (dataUrl: string) => {
   return format === "JPG" ? "JPEG" : format || "JPEG";
 };
 
+const colorFromHex = (value: string | undefined, fallback: [number, number, number]): [number, number, number] => {
+  const match = value?.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
+  return match ? [Number.parseInt(match[1], 16), Number.parseInt(match[2], 16), Number.parseInt(match[3], 16)] : fallback;
+};
+
+const paleColor = ([r, g, b]: [number, number, number]): [number, number, number] => [
+  Math.round(r + (255 - r) * 0.91), Math.round(g + (255 - g) * 0.91), Math.round(b + (255 - b) * 0.91),
+];
+
 export async function generateQuotePdf(quote: Quote, company: CompanyInfo, projectImages: PdfProjectImage[] = [], projectDocuments: PdfProjectDocument[] = []) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true, putOnlyUsedFonts: true });
   const pageWidth = 210, pageHeight = 297, margin = 16;
   const contentWidth = pageWidth - margin * 2, footerLimit = 279;
-  const emerald: [number, number, number] = [12, 77, 70];
-  const teal: [number, number, number] = [17, 126, 116];
-  const gold: [number, number, number] = [181, 145, 78];
+  const emerald = colorFromHex(company.primaryColor, [12, 77, 70]);
+  const gold = colorFromHex(company.secondaryColor, [181, 145, 78]);
   const ink: [number, number, number] = [25, 34, 33];
   const muted: [number, number, number] = [92, 105, 102];
   const line: [number, number, number] = [218, 226, 223];
-  const mist: [number, number, number] = [244, 248, 247];
+  const mist = paleColor(emerald);
   let y = 0;
 
   const textStyle = (color: [number, number, number] = ink, size = 10, style: "normal" | "bold" = "normal") => {
@@ -99,18 +107,27 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   });
 
   y = 66; sectionTitle("Identificação das partes");
-  const partyGap = 4, partyWidth = (contentWidth - partyGap) / 2, partyHeight = 43;
+  const partyGap = 4, partyWidth = (contentWidth - partyGap) / 2;
+  const partyRows = (name: string, document: string, contact: string, email: string, address: string) => {
+    const nameLines = (doc.splitTextToSize(name || "Não informado", partyWidth - 10) as string[]).slice(0, 2);
+    const rows = [["CPF/CNPJ", document], ["CONTATO", contact], ["E-MAIL", email], ["ENDEREÇO", address]] as const;
+    return { nameLines, rows: rows.map(([label, value]) => ({ label, lines: (doc.splitTextToSize(value || "Não informado", partyWidth - 30) as string[]).slice(0, label === "ENDEREÇO" ? 3 : 2) })) };
+  };
+  const companyParty = partyRows(company.name, company.document, company.contact, company.email, company.address);
+  const clientParty = partyRows(quote.client.name, quote.client.document, quote.client.phone, quote.client.email, quote.client.address);
+  const partyContentHeight = (party: ReturnType<typeof partyRows>) => 21 + party.nameLines.length * 4 + party.rows.reduce((sum, row) => sum + Math.max(5, row.lines.length * 3.6 + 1), 0);
+  const partyHeight = Math.max(47, partyContentHeight(companyParty), partyContentHeight(clientParty));
   const drawParty = (x: number, title: string, name: string, document: string, contact: string, email: string, address: string) => {
     doc.setDrawColor(...line); doc.setFillColor(252, 253, 253); doc.roundedRect(x, y, partyWidth, partyHeight, 2.3, 2.3, "FD");
     doc.setFillColor(...emerald); doc.roundedRect(x, y, partyWidth, 8, 2.3, 2.3, "F"); doc.rect(x, y + 4, partyWidth, 4, "F");
     textStyle([255, 255, 255], 7.5, "bold"); doc.text(title, x + 5, y + 5.5);
-    textStyle(ink, 10, "bold"); doc.text(doc.splitTextToSize(name || "Não informado", partyWidth - 10)[0], x + 5, y + 14);
-    const rows: Array<[string, string]> = [["CPF/CNPJ", document], ["CONTATO", contact], ["E-MAIL", email], ["ENDEREÇO", address]];
-    rows.forEach(([label, value], index) => {
-      const rowY = y + 20 + index * 5.3;
+    const party = partyRows(name, document, contact, email, address);
+    textStyle(ink, 10, "bold"); doc.text(party.nameLines, x + 5, y + 14);
+    let rowY = y + 18 + party.nameLines.length * 4;
+    party.rows.forEach(({ label, lines }) => {
       textStyle(muted, 6.5, "bold"); doc.text(label, x + 5, rowY);
-      const valueLines = doc.splitTextToSize(value || "Não informado", partyWidth - 30) as string[];
-      textStyle(ink, 7.8); doc.text(valueLines.slice(0, index === 3 ? 2 : 1), x + 28, rowY);
+      textStyle(ink, 7.8); doc.text(lines, x + 28, rowY);
+      rowY += Math.max(5, lines.length * 3.6 + 1);
     });
   };
   drawParty(margin, "EMITENTE / MARCENARIA", company.name, company.document, company.contact, company.email, company.address);
@@ -119,7 +136,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   y += partyHeight + 7;
   doc.setFillColor(...mist); doc.roundedRect(margin, y, contentWidth, 12, 2, 2, "F");
   textStyle(muted, 6.8, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 4.5);
-  textStyle(emerald, 9.2, "bold"); doc.text(doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10)[0], margin + 5, y + 9.5);
+  textStyle(emerald, 9.2, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 9.5);
   y += 20; sectionTitle("Móveis e especificações");
 
   quote.furniture.forEach((item, index) => {
@@ -184,9 +201,11 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     ensureSpace(70);
   }
   sectionTitle("Condições comerciais");
+  const includedServices = [quote.closing.measurementIncluded !== false && "Medição técnica", quote.closing.deliveryIncluded !== false && "Entrega", quote.closing.installationIncluded !== false && "Montagem"].filter(Boolean).join(" • ");
   const terms: Array<[string, string]> = [
     ["Pagamento", [quote.closing.paymentMethod, quote.closing.paymentTerms].filter(Boolean).join(" - ")],
-    ["Entrega", quote.closing.deliveryTime], ["Garantia", quote.closing.warranty], ["Validade", `${quote.closing.validityDays || "15"} dias`],
+    ["Prazo", quote.closing.deliveryTime], ["Serviços", includedServices || "Nenhum serviço adicional incluído"],
+    ["Garantia", quote.closing.warranty], ["Validade", `${quote.closing.validityDays || "15"} dias`],
   ];
   const termLines = terms.map(([label, value]) => ({ label, lines: doc.splitTextToSize(value || "-", contentWidth - 43) as string[] }));
   const termsHeight = 5 + termLines.reduce((sum, term) => sum + Math.max(6, term.lines.length * 4 + 1.5), 0);
@@ -198,6 +217,12 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     termY += Math.max(6, lines.length * 4 + 1.5);
   });
   y += termsHeight + 8;
+
+  if (quote.closing.exclusions) {
+    const exclusionLines = doc.splitTextToSize(quote.closing.exclusions, contentWidth - 12) as string[];
+    ensureSpace(exclusionLines.length * 4.4 + 18); textStyle(emerald, 8.5, "bold"); doc.text("ITENS NÃO INCLUÍDOS", margin, y);
+    textStyle(muted, 8.5); doc.text(exclusionLines, margin, y + 6); y += exclusionLines.length * 4.4 + 12;
+  }
 
   if (quote.closing.notes) {
     const noteLines = doc.splitTextToSize(quote.closing.notes, contentWidth - 12) as string[];
