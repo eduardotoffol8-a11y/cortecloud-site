@@ -1,40 +1,60 @@
 "use client";
 
 import { Fingerprint, KeyRound, LoaderCircle, ShieldCheck, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type PasskeyInfo = { id: string; friendly_name?: string; created_at: string; last_used_at?: string };
 
 export function PasskeyCard({ compact = false }: { compact?: boolean }) {
   const [passkeys, setPasskeys] = useState<PasskeyInfo[]>([]);
-  const supported = useSyncExternalStore(() => () => undefined, () => "PublicKeyCredential" in window, () => true);
+  const [supported, setSupported] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
-    const { data } = await supabase.auth.passkey.list();
+    const { data, error } = await supabase.auth.passkey.list();
     setPasskeys((data || []) as PasskeyInfo[]);
+    if (error && error.code === "passkey_disabled") setMessage("A biometria está temporariamente indisponível. Entre por e-mail.");
     setLoading(false);
   }, []);
 
   useEffect(() => {
+    const checkSupport = async () => {
+      if (!("PublicKeyCredential" in window) || !window.isSecureContext) return setSupported(false);
+      try {
+        setSupported(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+      } catch { setSupported(false); }
+    };
+    void checkSupport();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
+
+  const passkeyError = (error: { code?: string; name?: string }) => {
+    if (error.code === "passkey_disabled") return "A biometria ainda não está liberada no servidor.";
+    if (error.code === "webauthn_credential_exists") return "A digital deste aparelho já está cadastrada.";
+    if (error.code === "email_not_confirmed") return "Abra o link de acesso enviado por e-mail uma vez antes de ativar.";
+    if (error.name === "NotAllowedError") return "A ativação foi cancelada ou bloqueada pelo aparelho.";
+    return "Não foi possível ativar neste navegador. Tente pelo Chrome, Safari ou pelo app instalado.";
+  };
 
   const register = async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     setLoading(true);
     setMessage("");
-    const { error } = await supabase.auth.registerPasskey();
-    if (error) setMessage(error.name === "NotAllowedError" ? "A ativação foi cancelada." : "Não foi possível ativar neste aparelho.");
-    else {
-      setMessage("Acesso rápido ativado neste aparelho.");
-      await load();
+    try {
+      const { error } = await supabase.auth.registerPasskey();
+      if (error) setMessage(passkeyError(error));
+      else {
+        setMessage("Acesso rápido ativado. Na próxima entrada, use a digital, o rosto ou o PIN.");
+        await load();
+      }
+    } catch (error) {
+      setMessage(passkeyError(error as { code?: string; name?: string }));
     }
     setLoading(false);
   };
@@ -49,7 +69,11 @@ export function PasskeyCard({ compact = false }: { compact?: boolean }) {
     setLoading(false);
   };
 
-  if (!supported && !loading) return null;
+  if (!supported && !loading) return (
+    <section className={`app-card ${compact ? "p-4" : "p-5 sm:p-6"}`}>
+      <p className="text-sm font-semibold text-[#687875]">Este navegador não oferece biometria. Use o e-mail ou abra o app instalado em um aparelho compatível.</p>
+    </section>
+  );
 
   return (
     <section className={`app-card ${compact ? "p-4" : "p-5 sm:p-6"}`}>
