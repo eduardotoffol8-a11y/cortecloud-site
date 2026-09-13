@@ -35,6 +35,11 @@ button { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 12px 40px rgba(26, 58, 54, 0.055);
 }
 
+.app-card.text-white {
+  border-color: color-mix(in srgb, var(--brand-dark) 82%, white);
+  background: var(--brand-dark);
+}
+
 .field-label {
   display: block;
   margin-bottom: 0.45rem;
