@@ -40,7 +40,14 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
     setMessage("");
     const { data, error } = await supabase.functions.invoke("create-mercado-pago-checkout", { body: { plan } });
     if (error || !data?.checkoutUrl) {
-      setMessage("O pagamento está sendo conectado. Tente novamente em breve.");
+      let detail = data?.error as string | undefined;
+      const response = (error as { context?: Response } | null)?.context;
+      if (!detail && response) {
+        try { detail = (await response.clone().json())?.error; } catch { /* Keep a helpful fallback. */ }
+      }
+      if (detail === "Payments not configured") setMessage("O pagamento ainda não está configurado.");
+      else if (detail === "Unauthorized") setMessage("Sua sessão expirou. Entre novamente e tente pagar.");
+      else setMessage(detail ? `O Mercado Pago não aceitou a solicitação: ${detail}` : "Não foi possível abrir o pagamento. Atualize a página e tente novamente.");
       setLoading("");
       return;
     }
