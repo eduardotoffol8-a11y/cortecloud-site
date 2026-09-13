@@ -124,7 +124,7 @@ function AuthScreen() {
 
 export function AuthShell() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AccountProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -147,8 +147,15 @@ export function AuthShell() {
         accessExpiresAt: data.access_expires_at,
       });
     }
+    setNow(Date.now());
     setLoading(false);
   }, [supabase]);
+
+  const refreshCurrentProfile = useCallback(async () => {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    await loadProfile(data.session);
+  }, [loadProfile, supabase]);
 
   useEffect(() => {
     if (!supabase) {
@@ -156,12 +163,46 @@ export function AuthShell() {
       setLoading(false);
       return;
     }
-    void supabase.auth.getSession().then(({ data }) => loadProfile(data.session));
+    void refreshCurrentProfile();
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       window.setTimeout(() => void loadProfile(nextSession), 0);
     });
     return () => data.subscription.unsubscribe();
-  }, [loadProfile, supabase]);
+  }, [loadProfile, refreshCurrentProfile, supabase]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshCurrentProfile();
+    };
+    const refreshOnFocus = () => void refreshCurrentProfile();
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    const params = new URLSearchParams(window.location.search);
+    const paymentReturn = params.get("payment");
+    const timers: number[] = [];
+
+    if (paymentReturn === "success" || paymentReturn === "pending") {
+      [0, 1200, 3000, 6000, 10000].forEach((delay) => {
+        timers.push(window.setTimeout(() => void refreshCurrentProfile(), delay));
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      timers.forEach((timerId) => window.clearTimeout(timerId));
+    };
+  }, [refreshCurrentProfile, supabase]);
 
   const signOut = async () => {
     await supabase?.auth.signOut();
