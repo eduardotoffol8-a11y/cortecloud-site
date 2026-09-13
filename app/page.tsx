@@ -1,5 +1,5 @@
-import { BudgetApp } from "@/components/budget-app";
+import { AuthShell } from "@/components/auth-shell";
 
 export default function Home() {
-  return <BudgetApp />;
+  return <AuthShell />;
 }

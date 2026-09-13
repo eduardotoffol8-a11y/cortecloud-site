@@ -8,7 +8,7 @@ export const emptyFurniture = (): FurnitureItem => ({
 });
 
 export const createEmptyQuote = (number = "ORC-001"): Quote => ({
-  id: makeId(), number, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  id: makeId(), clientId: makeId(), number, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   client: { name: "", phone: "", email: "", document: "", projectName: "", address: "" }, furniture: [emptyFurniture()],
   closing: { paymentMethod: "PIX ou transferência", paymentTerms: "50% na aprovação e 50% na entrega", deliveryTime: "30 dias úteis após a aprovação", warranty: "12 meses contra defeitos de fabricação e montagem", validityDays: "15", discount: "", notes: "", status: "pending" },
 });

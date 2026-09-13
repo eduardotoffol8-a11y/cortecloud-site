@@ -3,7 +3,7 @@ import { brl, moneyValue, quoteSubtotal, quoteTotal } from "./quote";
 
 const cleanFileName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-const itemDetails = (item: FurnitureItem) => {
+const extraDetails = (item: FurnitureItem) => {
   const details: string[] = [];
   if (item.frontColor) details.push(`Frentes: ${item.frontColor}`);
   if (item.handle) details.push(`Puxador: ${item.handle}`);
@@ -12,45 +12,50 @@ const itemDetails = (item: FurnitureItem) => {
   if (item.aluminum) details.push("Perfil de alumínio");
   if (item.led) details.push("Iluminação LED");
   if (item.extras) details.push(item.extras);
-  return details.join(" • ") || "Sem adicionais especificados";
+  return details.join(" • ") || "Sem ferragens ou adicionais especificados";
 };
 
 export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
   const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true, putOnlyUsedFonts: true });
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 16;
+  const margin = 15;
   const contentWidth = pageWidth - margin * 2;
+  const footerLimit = pageHeight - 19;
   const brand: [number, number, number] = [15, 118, 110];
+  const brandDark: [number, number, number] = [18, 61, 57];
   const ink: [number, number, number] = [24, 35, 33];
-  const muted: [number, number, number] = [94, 111, 107];
+  const muted: [number, number, number] = [91, 107, 103];
+  const line: [number, number, number] = [216, 226, 223];
   let y = 16;
 
-  const setText = (color: [number, number, number] = ink, size = 9, style: "normal" | "bold" = "normal") => {
+  const textStyle = (color: [number, number, number] = ink, size = 10, style: "normal" | "bold" = "normal") => {
     doc.setTextColor(...color);
     doc.setFont("helvetica", style);
     doc.setFontSize(size);
+    doc.setLineHeightFactor(1.25);
   };
 
-  const addPageHeader = () => {
-    doc.setFillColor(245, 248, 247);
-    doc.rect(0, 0, pageWidth, 12, "F");
-    setText(brand, 8, "bold");
-    doc.text(company.name || "ORÇAMENTO", margin, 7.7);
-    setText(muted, 8);
-    doc.text(quote.number, pageWidth - margin, 7.7, { align: "right" });
-    y = 20;
+  const continuationHeader = () => {
+    doc.setFillColor(...brandDark);
+    doc.rect(0, 0, pageWidth, 13, "F");
+    textStyle([255, 255, 255], 9, "bold");
+    doc.text(company.name || "ORÇAMENTO", margin, 8.4);
+    doc.text(quote.number, pageWidth - margin, 8.4, { align: "right" });
+    y = 22;
   };
 
   const ensureSpace = (needed: number) => {
-    if (y + needed <= pageHeight - 20) return;
+    if (y + needed <= footerLimit) return;
     doc.addPage();
-    addPageHeader();
+    continuationHeader();
   };
 
+  doc.setFillColor(...brandDark);
+  doc.rect(0, 0, 6, pageHeight, "F");
   doc.setFillColor(...brand);
-  doc.rect(0, 0, pageWidth, 5, "F");
+  doc.rect(6, 0, pageWidth - 6, 5, "F");
   y = 18;
 
   if (company.logo) {
@@ -58,126 +63,153 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo) {
       const match = company.logo.match(/^data:image\/(png|jpeg|jpg);/i);
       if (match) {
         const format = match[1].toUpperCase() === "JPG" ? "JPEG" : match[1].toUpperCase();
-        doc.addImage(company.logo, format, margin, y, 28, 18, undefined, "FAST");
+        doc.addImage(company.logo, format, margin, y, 27, 18, undefined, "FAST");
       }
-    } catch { /* A text header remains if the uploaded image is incompatible. */ }
+    } catch { /* The company name remains as the primary letterhead. */ }
   }
 
-  const headerX = company.logo ? 49 : margin;
-  setText(ink, 16, "bold");
+  const headerX = company.logo ? 47 : margin;
+  textStyle(ink, 15, "bold");
   doc.text(company.name || "Sua marcenaria", headerX, y + 5);
-  setText(muted, 8.5);
-  [company.document, company.contact, company.email, company.address].filter(Boolean).slice(0, 3).forEach((line, index) => doc.text(line, headerX, y + 10 + index * 4));
+  textStyle(muted, 9);
+  const companyLines = [company.document, company.contact, company.email, company.address].filter(Boolean);
+  companyLines.slice(0, 3).forEach((value, index) => {
+    const lineText = doc.splitTextToSize(String(value), 82)[0] || "";
+    doc.text(lineText, headerX, y + 11 + index * 4.5);
+  });
 
-  setText(brand, 18, "bold");
-  doc.text("ORÇAMENTO", pageWidth - margin, y + 4, { align: "right" });
-  setText(muted, 8.5);
-  doc.text(quote.number, pageWidth - margin, y + 10, { align: "right" });
-  doc.text(new Date(quote.createdAt).toLocaleDateString("pt-BR"), pageWidth - margin, y + 15, { align: "right" });
-  y = 44;
-  doc.setDrawColor(214, 225, 222);
+  doc.setFillColor(238, 247, 245);
+  doc.roundedRect(pageWidth - margin - 49, y - 1, 49, 26, 2, 2, "F");
+  textStyle(brand, 13, "bold");
+  doc.text("ORÇAMENTO", pageWidth - margin - 4, y + 6, { align: "right" });
+  textStyle(ink, 9, "bold");
+  doc.text(quote.number, pageWidth - margin - 4, y + 13, { align: "right" });
+  textStyle(muted, 8.5);
+  doc.text(new Date(quote.createdAt).toLocaleDateString("pt-BR"), pageWidth - margin - 4, y + 19, { align: "right" });
+
+  y = 49;
+  doc.setDrawColor(...line);
   doc.line(margin, y, pageWidth - margin, y);
   y += 9;
 
-  setText(brand, 8, "bold");
+  textStyle(brand, 8.5, "bold");
   doc.text("CLIENTE E PROJETO", margin, y);
   y += 5;
   doc.setFillColor(247, 250, 249);
-  doc.roundedRect(margin, y, contentWidth, 25, 2, 2, "F");
-  setText(ink, 10, "bold");
-  doc.text(quote.client.name || "Cliente não informado", margin + 5, y + 7);
-  setText(muted, 8.5);
-  doc.text([quote.client.phone, quote.client.email, quote.client.document].filter(Boolean).join("  |  ") || "—", margin + 5, y + 13);
-  const projectLine = [quote.client.projectName, quote.client.address].filter(Boolean).join(" — ") || "Local da obra não informado";
-  doc.text(doc.splitTextToSize(projectLine, contentWidth - 10).slice(0, 2), margin + 5, y + 19);
-  y += 34;
+  doc.roundedRect(margin, y, contentWidth, 31, 2.5, 2.5, "F");
+  textStyle(ink, 11.5, "bold");
+  doc.text(quote.client.name || "Cliente não informado", margin + 5, y + 8);
+  textStyle(muted, 9);
+  const contact = [quote.client.phone, quote.client.email, quote.client.document].filter(Boolean).join("  •  ") || "Contato não informado";
+  doc.text(doc.splitTextToSize(contact, contentWidth - 10).slice(0, 1), margin + 5, y + 15);
+  textStyle(ink, 9, "bold");
+  doc.text(quote.client.projectName || "Projeto sem nome", margin + 5, y + 22);
+  textStyle(muted, 8.5);
+  doc.text(doc.splitTextToSize(quote.client.address || "Local da obra não informado", contentWidth - 10).slice(0, 1), margin + 5, y + 27);
+  y += 40;
 
-  setText(brand, 8, "bold");
+  textStyle(brand, 8.5, "bold");
   doc.text("MÓVEIS E ESPECIFICAÇÕES", margin, y);
   y += 5;
 
   quote.furniture.forEach((item, index) => {
-    const detailLines = doc.splitTextToSize(itemDetails(item), contentWidth - 12) as string[];
-    const rowHeight = 23 + Math.max(0, detailLines.length - 1) * 3.5;
-    ensureSpace(rowHeight + 4);
-    doc.setDrawColor(220, 229, 227);
-    const shade = index % 2 === 0 ? 251 : 248;
-    doc.setFillColor(shade, 252, 251);
-    doc.roundedRect(margin, y, contentWidth, rowHeight, 2, 2, "FD");
-    setText(brand, 9, "bold");
-    doc.text(String(index + 1).padStart(2, "0"), margin + 5, y + 7);
-    setText(ink, 10, "bold");
-    doc.text(`${item.environment || "Ambiente"} · ${item.name || "Móvel"}`, margin + 16, y + 7);
-    setText(muted, 8.5);
-    doc.text(`${item.width || "—"} × ${item.height || "—"} × ${item.depth || "—"} mm  |  MDF ${item.mdfThickness || "—"} mm · ${item.mdfColor || "—"}`, margin + 16, y + 13);
-    doc.text(detailLines, margin + 16, y + 18);
-    setText(ink, 9, "bold");
-    doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - 43, y + 7, { align: "right" });
-    doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 5, y + 7, { align: "right" });
-    y += rowHeight + 4;
+    const specs = `Dimensões (L × A × P): ${item.width || "—"} × ${item.height || "—"} × ${item.depth || "—"} mm  •  MDF ${item.mdfThickness || "—"} mm  •  ${item.mdfColor || "Cor não informada"}`;
+    const specLines = doc.splitTextToSize(specs, contentWidth - 12) as string[];
+    const detailLines = doc.splitTextToSize(extraDetails(item), contentWidth - 12) as string[];
+    const rowHeight = 24 + specLines.length * 4.2 + detailLines.length * 4.2;
+    ensureSpace(rowHeight + 5);
+
+    doc.setDrawColor(...line);
+    doc.setFillColor(index % 2 === 0 ? 250 : 247, 251, 250);
+    doc.roundedRect(margin, y, contentWidth, rowHeight, 2.5, 2.5, "FD");
+    doc.setFillColor(...brand);
+    doc.roundedRect(margin + 4, y + 5, 10, 8, 2, 2, "F");
+    textStyle([255, 255, 255], 8.5, "bold");
+    doc.text(String(index + 1).padStart(2, "0"), margin + 9, y + 10.5, { align: "center" });
+
+    textStyle(ink, 11, "bold");
+    const title = `${item.environment || "Ambiente"} · ${item.name || "Móvel"}`;
+    doc.text(doc.splitTextToSize(title, contentWidth - 76)[0], margin + 18, y + 10.5);
+    textStyle(ink, 10, "bold");
+    doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - 45, y + 10.5, { align: "right" });
+    doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 10.5, { align: "right" });
+
+    let rowY = y + 19;
+    textStyle(muted, 9);
+    doc.text(specLines, margin + 5, rowY);
+    rowY += specLines.length * 4.2 + 3;
+    textStyle(ink, 8.8);
+    doc.text(detailLines, margin + 5, rowY);
+    y += rowHeight + 5;
   });
 
-  ensureSpace(38);
+  ensureSpace(42);
   const subtotal = quoteSubtotal(quote);
   const discount = moneyValue(quote.closing.discount);
   const total = quoteTotal(quote);
-  const boxX = pageWidth - margin - 74;
-  doc.setFillColor(239, 247, 245);
-  doc.roundedRect(boxX, y, 74, discount > 0 ? 30 : 24, 2, 2, "F");
-  setText(muted, 8.5);
-  doc.text("Subtotal", boxX + 5, y + 7);
-  doc.text(brl(subtotal), boxX + 69, y + 7, { align: "right" });
-  let totalY = y + 14;
+  const totalHeight = discount > 0 ? 35 : 28;
+  const totalX = pageWidth - margin - 78;
+  doc.setFillColor(235, 246, 243);
+  doc.roundedRect(totalX, y, 78, totalHeight, 2.5, 2.5, "F");
+  textStyle(muted, 9);
+  doc.text("Subtotal", totalX + 6, y + 8);
+  doc.text(brl(subtotal), totalX + 72, y + 8, { align: "right" });
+  let totalLine = y + 18;
   if (discount > 0) {
-    doc.text("Desconto", boxX + 5, y + 13);
-    doc.text(`− ${brl(discount)}`, boxX + 69, y + 13, { align: "right" });
-    totalY = y + 21;
+    doc.text("Desconto", totalX + 6, y + 15);
+    doc.text(`− ${brl(discount)}`, totalX + 72, y + 15, { align: "right" });
+    totalLine = y + 25;
   }
-  setText(brand, 12, "bold");
-  doc.text("TOTAL", boxX + 5, totalY);
-  doc.text(brl(total), boxX + 69, totalY, { align: "right" });
-  y += discount > 0 ? 38 : 32;
+  textStyle(brandDark, 12.5, "bold");
+  doc.text("TOTAL", totalX + 6, totalLine);
+  doc.text(brl(total), totalX + 72, totalLine, { align: "right" });
+  y += totalHeight + 10;
 
-  ensureSpace(58);
-  setText(brand, 8, "bold");
+  ensureSpace(63);
+  textStyle(brand, 8.5, "bold");
   doc.text("CONDIÇÕES COMERCIAIS", margin, y);
   y += 6;
-  const terms = [
+  const terms: Array<[string, string]> = [
     ["Pagamento", [quote.closing.paymentMethod, quote.closing.paymentTerms].filter(Boolean).join(" — ")],
-    ["Entrega", quote.closing.deliveryTime], ["Garantia", quote.closing.warranty], ["Validade", `${quote.closing.validityDays || "15"} dias`],
+    ["Entrega", quote.closing.deliveryTime],
+    ["Garantia", quote.closing.warranty],
+    ["Validade", `${quote.closing.validityDays || "15"} dias`],
   ];
   terms.forEach(([label, value]) => {
-    setText(ink, 8.5, "bold");
+    const lines = doc.splitTextToSize(value || "—", contentWidth - 35) as string[];
+    ensureSpace(Math.max(7, lines.length * 4.5 + 2));
+    textStyle(ink, 9, "bold");
     doc.text(`${label}:`, margin, y);
-    setText(muted, 8.5);
-    const lines = doc.splitTextToSize(value || "—", contentWidth - 28) as string[];
-    doc.text(lines, margin + 27, y);
-    y += Math.max(6, lines.length * 4);
+    textStyle(muted, 9);
+    doc.text(lines, margin + 31, y);
+    y += Math.max(7, lines.length * 4.5 + 2);
   });
 
   if (quote.closing.notes) {
-    const noteLines = doc.splitTextToSize(quote.closing.notes, contentWidth) as string[];
-    ensureSpace(noteLines.length * 4 + 13);
-    setText(ink, 8.5, "bold");
-    doc.text("Observações", margin, y + 2);
-    setText(muted, 8.5);
-    doc.text(noteLines, margin, y + 8);
-    y += noteLines.length * 4 + 14;
+    const noteLines = doc.splitTextToSize(quote.closing.notes, contentWidth - 10) as string[];
+    ensureSpace(noteLines.length * 4.5 + 19);
+    doc.setFillColor(248, 250, 249);
+    doc.roundedRect(margin, y, contentWidth, noteLines.length * 4.5 + 13, 2, 2, "F");
+    textStyle(ink, 9, "bold");
+    doc.text("Observações", margin + 5, y + 6);
+    textStyle(muted, 8.8);
+    doc.text(noteLines, margin + 5, y + 12);
+    y += noteLines.length * 4.5 + 20;
   }
 
-  ensureSpace(38);
+  ensureSpace(35);
   y += 10;
-  doc.setDrawColor(160, 175, 171);
-  doc.line(margin, y, margin + 70, y);
-  doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
-  setText(muted, 8);
-  doc.text("Responsável pela marcenaria", margin + 35, y + 5, { align: "center" });
-  doc.text("Cliente", pageWidth - margin - 35, y + 5, { align: "center" });
+  doc.setDrawColor(155, 171, 167);
+  doc.line(margin, y, margin + 72, y);
+  doc.line(pageWidth - margin - 72, y, pageWidth - margin, y);
+  textStyle(muted, 8.5);
+  doc.text("Responsável pela marcenaria", margin + 36, y + 5, { align: "center" });
+  doc.text("Cliente", pageWidth - margin - 36, y + 5, { align: "center" });
 
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page += 1) {
     doc.setPage(page);
-    setText([125, 140, 136], 7.5);
+    textStyle([121, 137, 133], 8);
     doc.text(`${company.name || "Orçamento profissional"} · ${quote.number}`, margin, pageHeight - 8);
     doc.text(`Página ${page} de ${pages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
   }

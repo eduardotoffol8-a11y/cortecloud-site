@@ -1,4 +1,4 @@
-const CACHE = "orcamovel-v1";
+const CACHE = "orcamovel-v2";
 const CORE = ["/", "/manifest.webmanifest", "/favicon.svg", "/app-icon.svg"];
 
 self.addEventListener("install", (event) => {
