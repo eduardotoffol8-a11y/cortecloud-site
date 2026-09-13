@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Eye, EyeOff, Fingerprint, KeyRound, LoaderCircle, LogIn, Mail, RefreshCw, ShieldCheck } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, Fingerprint, KeyRound, LoaderCircle, Mail, RefreshCw, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
@@ -26,26 +26,26 @@ function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState<"passkey" | "email" | "password" | "">("");
-  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState<"google" | "passkey" | "password" | "">("");
   const [error, setError] = useState("");
 
-  const sendAccessLink = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const signInWithGoogle = async () => {
     if (!supabase) return;
-    setLoading("email");
+    setLoading("google");
     setError("");
-    setMessage("");
-    const result = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: true, emailRedirectTo: window.location.origin },
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: { prompt: "select_account" },
+      },
     });
-    if (result.error) {
-      if (result.error.message.toLowerCase().includes("rate limit")) setError("Muitos links foram solicitados. Aguarde alguns minutos e tente novamente.");
-      else setError("Não foi possível enviar o acesso. Tente novamente.");
+
+    if (oauthError) {
+      setError("Não foi possível iniciar o acesso com Google. Tente novamente.");
+      setLoading("");
     }
-    else setMessage("Acesso enviado. Abra o e-mail uma vez; depois este aparelho fica conectado.");
-    setLoading("");
   };
 
   const signInWithPassword = async (event: React.FormEvent) => {
@@ -62,16 +62,15 @@ function AuthScreen() {
     if (!supabase) return;
     setLoading("passkey");
     setError("");
-    setMessage("");
     try {
       const { error: passkeyError } = await supabase.auth.signInWithPasskey();
       if (passkeyError) {
-        if (passkeyError.code === "passkey_disabled") setError("A biometria ainda não está liberada no servidor. Use o e-mail abaixo.");
+        if (passkeyError.code === "passkey_disabled") setError("A biometria ainda não está liberada no servidor. Entre com Google.");
         else if (passkeyError.name === "NotAllowedError") setError("A entrada foi cancelada ou não há uma digital cadastrada para este site.");
-        else setError("Não encontramos um acesso biométrico válido. Use o e-mail abaixo e ative a digital nos Ajustes.");
+        else setError("Não encontramos um acesso biométrico válido. Entre com Google e ative a digital nos Ajustes.");
       }
     } catch {
-      setError("Este navegador não permitiu usar a biometria. Use o e-mail abaixo.");
+      setError("Este navegador não permitiu usar a biometria. Entre com Google.");
     }
     setLoading("");
   };
@@ -85,22 +84,33 @@ function AuthScreen() {
           <div className="bg-[var(--brand-dark)] px-6 py-6 text-white">
             <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/12"><ShieldCheck size={23} /></div>
             <h1 className="text-2xl font-extrabold tracking-[-0.035em]">Entre no OrçaMóvel</h1>
-            <p className="mt-1.5 text-sm leading-6 text-[#c8e2de]">Sem criar ou memorizar senha.</p>
+            <p className="mt-1.5 text-sm leading-6 text-[#c8e2de]">Acesse com sua conta Google. Sem criar ou memorizar senha.</p>
           </div>
-          <form onSubmit={sendAccessLink} className="space-y-4 p-5 sm:p-6">
-            <button type="button" onClick={() => void signInWithPasskey()} disabled={Boolean(loading)} className="primary-button w-full">
+
+          <div className="space-y-4 p-5 sm:p-6">
+            <button type="button" onClick={() => void signInWithGoogle()} disabled={Boolean(loading)} className="primary-button w-full">
+              {loading === "google" ? (
+                <LoaderCircle className="animate-spin" size={18} />
+              ) : (
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-xs font-black text-[#4285F4]">G</span>
+              )}
+              {loading === "google" ? "Abrindo Google…" : "Continuar com Google"}
+            </button>
+
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-[#8a9894]"><span className="h-px flex-1 bg-[#dfe7e5]" />ou neste aparelho<span className="h-px flex-1 bg-[#dfe7e5]" /></div>
+
+            <button type="button" onClick={() => void signInWithPasskey()} disabled={Boolean(loading)} className="secondary-button w-full">
               {loading === "passkey" ? <LoaderCircle className="animate-spin" size={18} /> : <Fingerprint size={20} />}
               {loading === "passkey" ? "Aguarde…" : "Entrar com digital"}
             </button>
-            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-[#8a9894]"><span className="h-px flex-1 bg-[#dfe7e5]" />primeiro acesso ou novo aparelho<span className="h-px flex-1 bg-[#dfe7e5]" /></div>
-            <label><span className="field-label">E-mail</span><div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required type="email" className="field-input !pl-11" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" autoComplete="email" /></div></label>
+
             {error && <p role="alert" className="rounded-xl bg-rose-50 px-3.5 py-3 text-sm font-semibold text-rose-700">{error}</p>}
-            {message && <p role="status" className="rounded-xl bg-emerald-50 px-3.5 py-3 text-sm font-semibold leading-5 text-emerald-700">{message}</p>}
-            <button disabled={Boolean(loading)} className="secondary-button w-full"><LogIn size={18} />{loading === "email" ? "Enviando…" : "Receber acesso no e-mail"}</button>
-          </form>
+          </div>
+
           <details className="border-t border-[#e1e9e7] px-5 py-4 sm:px-6">
             <summary className="cursor-pointer text-center text-sm font-semibold text-[#687875]">Outras formas de entrar</summary>
             <form onSubmit={signInWithPassword} className="mt-4 space-y-3">
+              <label><span className="field-label">E-mail</span><div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required type="email" className="field-input !pl-11" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@email.com" autoComplete="email" /></div></label>
               <label><span className="field-label">Senha opcional</span><div className="relative"><KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#82918e]" size={18} /><input required type={showPassword ? "text" : "password"} className="field-input !pl-11 !pr-12" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Configurada nos Ajustes" autoComplete="current-password" /><button type="button" onClick={() => setShowPassword((value) => !value)} className="absolute right-1.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-[#6f7e7b]" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
               <button disabled={Boolean(loading)} className="quiet-button w-full"><KeyRound size={17} />{loading === "password" ? "Aguarde…" : "Entrar com senha"}</button>
             </form>
