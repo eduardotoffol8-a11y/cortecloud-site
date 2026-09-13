@@ -35,6 +35,7 @@ export interface ProjectAttachment {
 
 export interface Quote {
   id: string; clientId: string; number: string; createdAt: string; updatedAt: string; pdfGeneratedAt?: string; pdfStoragePath?: string;
+  pdfBrandSignature?: string;
   client: ClientInfo; furniture: FurnitureItem[]; closing: ClosingInfo; attachments?: ProjectAttachment[];
 }
 
