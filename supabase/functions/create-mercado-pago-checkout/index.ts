@@ -16,8 +16,11 @@ Deno.serve(async (request) => {
   const url = Deno.env.get("SUPABASE_URL")!;
   const token = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
   if (!token) return Response.json({ error: "Payments not configured" }, { status: 503, headers: cors });
-  const client = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authorization } } });
-  const { data: { user }, error: userError } = await client.auth.getUser();
+  const publishableKeys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}") as Record<string, string>;
+  const publicKey = publishableKeys.default || Deno.env.get("SUPABASE_ANON_KEY")!;
+  const client = createClient(url, publicKey, { global: { headers: { Authorization: authorization } } });
+  const jwt = authorization.replace(/^Bearer\s+/i, "");
+  const { data: { user }, error: userError } = await client.auth.getUser(jwt);
   if (userError || !user?.email) return Response.json({ error: "Unauthorized" }, { status: 401, headers: cors });
 
   const body = await request.json().catch(() => ({}));
@@ -36,6 +39,10 @@ Deno.serve(async (request) => {
     }),
   });
   const preference = await response.json();
-  if (!response.ok || !preference.init_point) return Response.json({ error: "Checkout unavailable" }, { status: 502, headers: cors });
+  if (!response.ok || !preference.init_point) {
+    console.error("Mercado Pago preference rejected", response.status, preference);
+    const reason = preference?.message || preference?.cause?.[0]?.description || "Checkout unavailable";
+    return Response.json({ error: reason, code: "mercado_pago_rejected" }, { status: 502, headers: cors });
+  }
   return Response.json({ checkoutUrl: preference.init_point }, { headers: cors });
 });
