@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const plans = { monthly: { price: 9.99, days: 30 }, annual: { price: 99.99, days: 365 }, lifetime: { price: 249.99, days: 0 } } as const;
+const lifetimePromotionEndsAt = new Date("2026-09-21T03:59:59.000Z").getTime();
+const plans = { monthly: { prices: [9.99], days: 30 }, annual: { prices: [99.99], days: 365 }, lifetime: { prices: [149.99, 249.99], days: 0 } } as const;
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("ok");
@@ -18,12 +19,16 @@ Deno.serve(async (request) => {
   const plan = payment.metadata?.plan as keyof typeof plans;
   const selected = plans[plan];
   const userId = String(payment.external_reference || payment.metadata?.user_id || "");
-  if (!selected || !/^[0-9a-f-]{36}$/i.test(userId) || payment.currency_id !== "BRL" || Math.abs(Number(payment.transaction_amount) - selected.price) > 0.001) {
+  const amount = Number(payment.transaction_amount);
+  const paidDuringPromotion = new Date(payment.date_created || 0).getTime() <= lifetimePromotionEndsAt;
+  const validPrice = selected?.prices.some((price) => Math.abs(amount - price) <= 0.001)
+    && !(plan === "lifetime" && Math.abs(amount - 149.99) <= 0.001 && !paidDuringPromotion);
+  if (!selected || !/^[0-9a-f-]{36}$/i.test(userId) || payment.currency_id !== "BRL" || !validPrice) {
     return Response.json({ error: "Invalid payment" }, { status: 400 });
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const { error: eventError } = await admin.from("payment_events").insert({ payment_id: paymentId, user_id: userId, plan_type: plan, amount: selected.price, status: payment.status });
+  const { error: eventError } = await admin.from("payment_events").insert({ payment_id: paymentId, user_id: userId, plan_type: plan, amount, status: payment.status });
   const { data: profile } = await admin.from("profiles").select("access_expires_at,last_payment_id").eq("id", userId).single();
   if (eventError?.code === "23505" && profile?.last_payment_id === paymentId) return Response.json({ received: true, duplicate: true });
   if (eventError && eventError.code !== "23505") return Response.json({ error: "Could not record payment" }, { status: 500 });
