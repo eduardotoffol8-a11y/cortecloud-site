@@ -67,8 +67,8 @@ export function InstallAppButton() {
               <button onClick={() => setShowHelp(false)} className="quiet-button !min-h-10 !w-10 !p-0" aria-label="Fechar"><X size={18} /></button>
             </div>
             <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><MoreVertical size={19} className="text-[#0f766e]" />Android: menu ⋮ → Instalar aplicativo</div>
-              <div className="flex items-center gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><Share2 size={19} className="text-[#0f766e]" />iPhone: Compartilhar → Adicionar à Tela de Início</div>
+              <div className="flex items-center gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><MoreVertical size={19} className="text-[var(--brand)]" />Android: menu ⋮ → Instalar aplicativo</div>
+              <div className="flex items-center gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><Share2 size={19} className="text-[var(--brand)]" />iPhone: Compartilhar → Adicionar à Tela de Início</div>
             </div>
           </section>
         </div>
