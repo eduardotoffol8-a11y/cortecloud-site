@@ -33,7 +33,7 @@ export function CompanyForm({
       <div className="app-card h-fit p-5">
         <span className="field-label">Logo da empresa</span>
         <div className="mt-2 grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl border border-dashed border-[#aac1bc] bg-[#f4f8f7] p-5">
-          {company.logo ? <Image src={company.logo} alt="Logo da marcenaria" width={800} height={600} unoptimized className="max-h-full max-w-full object-contain" /> : <div className="text-center text-[#6d7e7a]"><ImagePlus size={28} className="mx-auto mb-2 text-[#0f766e]" /><p className="text-sm font-bold">PNG ou JPG</p><p className="mt-1 text-xs">Até 800 KB</p></div>}
+          {company.logo ? <Image src={company.logo} alt="Logo da marcenaria" width={800} height={600} unoptimized className="max-h-full max-w-full object-contain" /> : <div className="text-center text-[#6d7e7a]"><ImagePlus size={28} className="mx-auto mb-2 text-[var(--brand)]" /><p className="text-sm font-bold">PNG ou JPG</p><p className="mt-1 text-xs">Até 800 KB</p></div>}
         </div>
         <input ref={logoInput} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(event) => onLogo(event.target.files?.[0])} />
         <button type="button" onClick={() => logoInput.current?.click()} className="secondary-button mt-3 w-full"><ImagePlus size={17} />{company.logo ? "Trocar logo" : "Adicionar logo"}</button>
@@ -41,7 +41,7 @@ export function CompanyForm({
       </div>
       <div className="app-card p-4 sm:p-6">
         <div className="mb-5 flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#e5f2f0] text-[#0f766e]"><Building2 size={20} /></div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><Building2 size={20} /></div>
           <div><h2 className="font-bold">Identificação da empresa</h2><p className="text-xs text-[#7b8b87]">{onboarding ? "Configure antes de criar o primeiro orçamento" : "Usada no cabeçalho dos PDFs"}</p></div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -62,7 +62,7 @@ export function CompanyForm({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {!onboarding && <div className="flex items-center gap-2 text-sm font-semibold text-[#47706a]"><span className="grid h-5 w-5 place-items-center rounded-full bg-[#dff1ed] text-[#0f766e]"><Check size={13} strokeWidth={3} /></span>Sincronizado com sua conta</div>}
+          {!onboarding && <div className="flex items-center gap-2 text-sm font-semibold text-[#47706a]"><span className="grid h-5 w-5 place-items-center rounded-full bg-[#dff1ed] text-[var(--brand)]"><Check size={13} strokeWidth={3} /></span>Sincronizado com sua conta</div>}
           <button type="button" onClick={onSave} disabled={saving} className="primary-button sm:ml-auto"><Save size={17} />{saving ? "Salvando…" : onboarding ? "Salvar e começar" : "Salvar alterações"}</button>
         </div>
       </div>
