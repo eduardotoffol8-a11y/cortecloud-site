@@ -21,7 +21,7 @@ export interface FurnitureItem {
 export interface ClosingInfo {
   paymentMethod: string; paymentTerms: string; deliveryTime: string; warranty: string; validityDays: string;
   discount: string; notes: string; exclusions: string; measurementIncluded: boolean; deliveryIncluded: boolean;
-  installationIncluded: boolean; status: QuoteStatus;
+  installationIncluded: boolean; showItemPrices: boolean; status: QuoteStatus;
 }
 
 export interface CompanyInfo {
