@@ -21,7 +21,11 @@ export function AuthReturnBridge() {
     }
 
     let cancelled = false;
-    const goToApp = () => { if (!cancelled) window.location.replace("/apps/moveis"); };
+    const goToApp = () => {
+      if (cancelled) return;
+      const openPlans = window.localStorage.getItem("orcamovel.open-plans") === "1";
+      window.location.replace(openPlans ? "/apps/moveis?plans=1" : "/apps/moveis");
+    };
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (session) goToApp(); });
 
     const finish = async () => {
