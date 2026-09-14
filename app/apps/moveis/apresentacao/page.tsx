@@ -18,11 +18,11 @@ const screenshots = [
   { file: "marca.jpg", title: "Com a sua identidade", description: "Escolha as cores que aparecem nos seus PDFs." },
 ];
 const reviews = [
-  { name: "Carlos Mendes", profile: "Marceneiro autônomo", title: "Praticidade no dia a dia", text: "O que mais gostei foi a praticidade. Em poucos minutos consegui cadastrar o cliente, montar o orçamento e gerar um PDF muito mais apresentável.", avatar: { bg: "#dbece7", skin: "#b97854", hair: "#2f2724", shirt: "#376f63" } },
-  { name: "Juliano Ribeiro", profile: "Dono de marcenaria", title: "Um PDF profissional", text: "O PDF ficou com aparência profissional de verdade. Para quem trabalha com móveis sob medida, isso passa muito mais confiança para o cliente.", avatar: { bg: "#eee5d7", skin: "#8f5d43", hair: "#1f1d1c", shirt: "#916a37" } },
-  { name: "Rafael Costa", profile: "Marceneiro e montador", title: "Simples de usar", text: "Gostei porque o sistema é direto. Não fica cheio de coisa desnecessária. Dá para usar no celular sem complicação e organizar os orçamentos com facilidade.", avatar: { bg: "#dfe7ef", skin: "#d49a76", hair: "#4b342a", shirt: "#365d7d" } },
-  { name: "André Ferreira", profile: "Pequena marcenaria", title: "A marca da minha marcenaria", text: "A parte de personalizar a marca é um diferencial muito bom. As cores e o layout deixam a proposta mais bonita e valorizam o meu trabalho.", avatar: { bg: "#e8e0ed", skin: "#a9694d", hair: "#30272a", shirt: "#6b5575" } },
-  { name: "Diego Martins", profile: "Profissional de móveis planejados", title: "Tudo mais organizado", text: "Para quem fazia tudo no improviso, o OrçaMóvel ajuda bastante. Cliente, orçamento e PDF ficam no mesmo lugar, o que economiza tempo e evita retrabalho.", avatar: { bg: "#e5eadb", skin: "#c7835e", hair: "#312a25", shirt: "#68784d" } },
+  { name: "Carlos Mendes", profile: "Marceneiro autônomo", title: "Praticidade no dia a dia", text: "O que mais gostei foi a praticidade. Em poucos minutos consegui cadastrar o cliente, montar o orçamento e gerar um PDF muito mais apresentável." },
+  { name: "Juliano Ribeiro", profile: "Dono de marcenaria", title: "Um PDF profissional", text: "O PDF ficou com aparência profissional de verdade. Para quem trabalha com móveis sob medida, isso passa muito mais confiança para o cliente." },
+  { name: "Rafael Costa", profile: "Marceneiro e montador", title: "Simples de usar", text: "Gostei porque o sistema é direto. Não fica cheio de coisa desnecessária. Dá para usar no celular sem complicação e organizar os orçamentos com facilidade." },
+  { name: "André Ferreira", profile: "Pequena marcenaria", title: "A marca da minha marcenaria", text: "A parte de personalizar a marca é um diferencial muito bom. As cores e o layout deixam a proposta mais bonita e valorizam o meu trabalho." },
+  { name: "Diego Martins", profile: "Profissional de móveis planejados", title: "Tudo mais organizado", text: "Para quem fazia tudo no improviso, o OrçaMóvel ajuda bastante. Cliente, orçamento e PDF ficam no mesmo lugar, o que economiza tempo e evita retrabalho." },
 ];
 const benefits = [
   { icon: Monitor, title: "Celular e computador", text: "Use a mesma conta no navegador ou instale o OrçaMóvel no seu dispositivo." },
@@ -40,21 +40,9 @@ const faq = [
   ["Como envio o orçamento para meu cliente?", "Gere o PDF no aplicativo, abra ou baixe o arquivo e compartilhe pelo canal que você já usa com seu cliente."],
 ];
 
-type AvatarPalette = (typeof reviews)[number]["avatar"];
-
-function ReviewerAvatar({ palette }: { palette: AvatarPalette }) {
-  return (
-    <span className={styles.avatar} style={{ background: palette.bg, overflow: "hidden" }} aria-hidden="true">
-      <svg viewBox="0 0 44 44" width="44" height="44" focusable="false">
-        <path d="M7 44c1-9 6-13 15-13s14 4 15 13H7Z" fill={palette.shirt} />
-        <circle cx="22" cy="19" r="10" fill={palette.skin} />
-        <path d="M12.5 17.5c.4-8 4.4-12 10.1-12 5.8 0 9.4 4 9.1 10.8-2.3-1.2-4.8-2.1-7.5-2.5-4.1-.6-7.9.2-11.7 3.7Z" fill={palette.hair} />
-        <circle cx="18.2" cy="20" r=".9" fill="#2a2725" />
-        <circle cx="25.8" cy="20" r=".9" fill="#2a2725" />
-        <path d="M19.4 24.3c1.8 1.2 3.5 1.2 5.2 0" fill="none" stroke="#6f4336" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    </span>
-  );
+function ReviewerMonogram({ name }: { name: string }) {
+  const initials = name.split(" ").slice(0, 2).map(part => part[0]).join("");
+  return <span className={styles.avatar} aria-hidden="true">{initials}</span>;
 }
 
 function TrialLink({ light = false }: { light?: boolean }) {
@@ -143,10 +131,10 @@ export default function MoveisPresentationPage() {
         </section>
 
         <section className={styles.reviewSection} aria-labelledby="avaliacoes">
-          <div className={styles.container}><p className={styles.eyebrow}>PRIMEIRAS IMPRESSÕES</p><h2 id="avaliacoes">Avaliações iniciais</h2><p className={styles.reviewNote}>Exemplos ilustrativos de feedbacks de teste. Nomes e avatares fictícios; não são avaliações públicas verificadas.</p>
+          <div className={styles.container}><p className={styles.eyebrow}>PRIMEIRAS IMPRESSÕES</p><h2 id="avaliacoes">Avaliações iniciais</h2><p className={styles.reviewNote}>Exemplos ilustrativos de feedbacks de teste. Identidades fictícias; não são avaliações públicas verificadas.</p>
             <div className={styles.reviews} tabIndex={0} role="region" aria-label="Exemplos de feedbacks de teste">
               {reviews.map(review => <article key={review.name} className={styles.review}>
-                <div className={styles.reviewer}><ReviewerAvatar palette={review.avatar} /><div><h3>{review.name}</h3><p>{review.profile}</p></div></div>
+                <div className={styles.reviewer}><ReviewerMonogram name={review.name} /><div><h3>{review.name}</h3><p>{review.profile}</p></div></div>
                 <div className={styles.stars} aria-label="5 estrelas ilustrativas">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={16} fill="currentColor" aria-hidden="true" />)}<span>Exemplo de teste</span></div>
                 <h4>{review.title}</h4><blockquote>“{review.text}”</blockquote>
               </article>)}
