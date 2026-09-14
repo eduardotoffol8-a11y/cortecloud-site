@@ -2,14 +2,16 @@ name: Fix PDF logo refresh
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+    paths:
+      - .github/workflows/fix-pdf-logo-signature.yml
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +20,8 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          path = Path('components/budget-app.tsx')
+
+          path = Path("components/budget-app.tsx")
           text = path.read_text()
           old = '''function pdfBrandSignature(company: CompanyInfo) {
   const primary = /^#[\\da-f]{6}$/i.test(company.primaryColor) ? company.primaryColor : emptyCompany.primaryColor;
@@ -40,7 +43,7 @@ jobs:
   return `v2:${source.length}:${(hash >>> 0).toString(36)}`;
 }'''
           if old not in text:
-              raise SystemExit('Expected pdfBrandSignature block not found')
+              raise SystemExit("Expected pdfBrandSignature block not found")
           path.write_text(text.replace(old, new, 1))
           PY
       - name: Commit fix
@@ -49,5 +52,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add components/budget-app.tsx
-          git commit -m "fix: refresh PDFs when company logo changes"
+          git commit -m "fix: refresh PDFs when company profile changes"
           git push
