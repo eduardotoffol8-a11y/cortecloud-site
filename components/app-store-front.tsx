@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, BadgeCheck, Boxes, BriefcaseBusiness, Building2, CheckCircle2, Construction,
   Droplets, FileText, FolderOpen, Hammer, LayoutDashboard, Ruler, Search, ShieldCheck,
@@ -59,8 +60,33 @@ function StorePreviewCard({ variant }: { variant: "dashboard" | "quote" | "clien
 }
 
 function WoodworkingLifestyleScene() {
+  const [mobileImageFailed, setMobileImageFailed] = useState(false);
+  const [desktopImageFailed, setDesktopImageFailed] = useState(false);
+
   return (
     <div className="relative min-h-[27rem] overflow-hidden bg-[#eee4d6]">
+      {!desktopImageFailed && (
+        <Image
+          src="/orcamovel/store/orcamovel-marcenaria-premium.jpg"
+          alt="Marcenaria planejada sofisticada"
+          fill
+          priority
+          sizes="(min-width: 1024px) 55vw, 100vw"
+          className="hidden object-cover object-center md:block"
+          onError={() => setDesktopImageFailed(true)}
+        />
+      )}
+      {!mobileImageFailed && (
+        <Image
+          src="/orcamovel/store/orcamovel-marcenaria-premium-mobile.webp"
+          alt="Casal admirando um closet planejado sofisticado"
+          fill
+          priority
+          sizes="(max-width: 767px) 100vw, 1px"
+          className="object-cover object-[center_46%] md:hidden"
+          onError={() => setMobileImageFailed(true)}
+        />
+      )}
       <svg viewBox="0 0 760 520" className="absolute inset-0 h-full w-full" role="img" aria-label="Ambiente elegante com móvel planejado em madeira e uma cliente feliz com o resultado" preserveAspectRatio="xMidYMid slice">
         <defs>
           <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f7f2ea" /><stop offset="1" stopColor="#e3d5c2" /></linearGradient>
@@ -116,11 +142,11 @@ function WoodworkingLifestyleScene() {
         </g>
       </svg>
 
-      <div className="absolute left-5 top-5 max-w-[15rem] rounded-2xl border border-white/60 bg-white/88 p-4 shadow-xl backdrop-blur sm:left-7 sm:top-7">
+      <div className="absolute left-5 top-5 z-10 max-w-[15rem] rounded-2xl border border-white/60 bg-white/88 p-4 shadow-xl backdrop-blur sm:left-7 sm:top-7">
         <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-[#8a633c]">Marcenaria sob medida</p>
         <p className="mt-1 text-sm font-extrabold leading-5 text-[#2b332f]">Móveis bonitos pedem uma apresentação à altura.</p>
       </div>
-      <div className="absolute bottom-5 right-5 flex items-center gap-3 rounded-2xl border border-white/70 bg-[#123f39]/92 px-4 py-3 text-white shadow-xl backdrop-blur sm:bottom-7 sm:right-7">
+      <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-2xl border border-white/70 bg-[#123f39]/92 px-4 py-3 text-white shadow-xl backdrop-blur sm:bottom-7 sm:right-7">
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/12"><FileText size={18} /></span>
         <span><span className="block text-xs font-extrabold">Do projeto ao PDF</span><span className="block text-[0.68rem] text-white/70">Com a identidade da marcenaria</span></span>
       </div>

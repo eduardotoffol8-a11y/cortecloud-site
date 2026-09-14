@@ -1,9 +1,0 @@
-@media (max-width: 760px) {
-  html body div[class*="min-h-[27rem]"][class*="bg-[#eee4d6]"] {
-    min-height: 29rem !important;
-    background:
-      linear-gradient(180deg, rgba(17, 35, 31, 0.02), rgba(17, 35, 31, 0.13)),
-      url('/orcamovel/store/orcamovel-marcenaria-premium-mobile.webp') 50% 46% / cover no-repeat !important;
-    background-color: #e9dfd2 !important;
-  }
-}
