@@ -26,7 +26,7 @@ function AuthScreen() {
   const signInWithGoogle = async () => {
     if (!supabase) return;
     setLoading("google"); setError("");
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/apps/moveis`, queryParams: { prompt: "select_account" } } });
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } } });
     if (oauthError) { setError("Não foi possível iniciar o acesso com Google. Tente novamente."); setLoading(""); }
   };
 
