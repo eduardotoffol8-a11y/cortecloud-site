@@ -13,7 +13,7 @@ export const createEmptyQuote = (number = "ORC-001"): Quote => ({
   closing: { paymentMethod: "PIX ou transferência", paymentTerms: "50% na aprovação e 50% na entrega", deliveryTime: "30 dias úteis após a aprovação", warranty: "12 meses contra defeitos de fabricação e montagem", validityDays: "15", discount: "", notes: "", exclusions: "", measurementIncluded: true, deliveryIncluded: true, installationIncluded: true, showItemPrices: true, status: "pending" },
 });
 
-export const emptyCompany: CompanyInfo = { name: "", document: "", contact: "", email: "", address: "", logo: "", primaryColor: "#0C4D46", secondaryColor: "#B5914E" };
+export const emptyCompany: CompanyInfo = { name: "", tagline: "", document: "", contact: "", email: "", address: "", logo: "", primaryColor: "#0C4D46", secondaryColor: "#B5914E" };
 export const statusLabel: Record<QuoteStatus, string> = { draft: "Rascunho", pending: "Pendente", approved: "Aprovado", declined: "Recusado" };
 
 export const moneyValue = (value: string | number) => {
