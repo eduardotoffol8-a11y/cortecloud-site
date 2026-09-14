@@ -1,0 +1,53 @@
+name: Fix PDF logo refresh
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch company signature used by archived PDFs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('components/budget-app.tsx')
+          text = path.read_text()
+          old = '''function pdfBrandSignature(company: CompanyInfo) {
+  const primary = /^#[\\da-f]{6}$/i.test(company.primaryColor) ? company.primaryColor : emptyCompany.primaryColor;
+  const secondary = /^#[\\da-f]{6}$/i.test(company.secondaryColor) ? company.secondaryColor : emptyCompany.secondaryColor;
+  return `${primary.toLowerCase()}:${secondary.toLowerCase()}`;
+}'''
+          new = '''function pdfBrandSignature(company: CompanyInfo) {
+  const primary = /^#[\\da-f]{6}$/i.test(company.primaryColor) ? company.primaryColor : emptyCompany.primaryColor;
+  const secondary = /^#[\\da-f]{6}$/i.test(company.secondaryColor) ? company.secondaryColor : emptyCompany.secondaryColor;
+  const source = [
+    company.name.trim(), company.document.trim(), company.contact.trim(), company.email.trim(), company.address.trim(),
+    primary.toLowerCase(), secondary.toLowerCase(), company.logo || "",
+  ].join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `v2:${source.length}:${(hash >>> 0).toString(36)}`;
+}'''
+          if old not in text:
+              raise SystemExit('Expected pdfBrandSignature block not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/budget-app.tsx
+          git commit -m "fix: refresh PDFs when company logo changes"
+          git push
