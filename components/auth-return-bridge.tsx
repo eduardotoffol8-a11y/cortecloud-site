@@ -14,17 +14,21 @@ export function AuthReturnBridge() {
     if (!isAuthReturn) return;
 
     setActive(true);
+    const savedDestination = window.localStorage.getItem("orcamento.auth-return");
+    const destination = savedDestination === "/apps/obra-civil" ? "/apps/obra-civil" : "/apps/moveis";
+    const productName = destination === "/apps/obra-civil" ? "OrçaObra" : "OrçaMóvel";
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      window.location.replace("/apps/moveis");
+      window.location.replace(destination);
       return;
     }
 
     let cancelled = false;
     const goToApp = () => {
       if (cancelled) return;
-      const openPlans = window.localStorage.getItem("orcamovel.open-plans") === "1";
-      window.location.replace(openPlans ? "/apps/moveis?plans=1" : "/apps/moveis");
+      const openPlans = destination === "/apps/moveis" && window.localStorage.getItem("orcamovel.open-plans") === "1";
+      window.localStorage.removeItem("orcamento.auth-return");
+      window.location.replace(openPlans ? "/apps/moveis?plans=1" : destination);
     };
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { if (session) goToApp(); });
 
@@ -51,7 +55,7 @@ export function AuthReturnBridge() {
       <div className="app-card w-full max-w-sm p-7 text-center">
         <LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={28} />
         <h1 className="mt-4 text-lg font-extrabold">Concluindo seu acesso</h1>
-        <p className="mt-2 text-sm leading-6 text-[#687875]">Abrindo o OrçaMóvel no seu dispositivo…</p>
+        <p className="mt-2 text-sm leading-6 text-[#687875]">Abrindo seu aplicativo no dispositivo…</p>
       </div>
     </div>
   );

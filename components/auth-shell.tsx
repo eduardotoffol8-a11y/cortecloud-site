@@ -29,6 +29,9 @@ function AuthScreen({ product }: { product: "moveis" | "obra" }) {
   const signInWithGoogle = async () => {
     if (!supabase) return;
     setLoading("google"); setError("");
+    // Some OAuth providers return through the configured site URL. Keep the selected
+    // product locally so the root return bridge never sends an OrçaObra login to OrçaMóvel.
+    window.localStorage.setItem("orcamento.auth-return", product === "obra" ? "/apps/obra-civil" : "/apps/moveis");
     const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}${window.location.pathname}`, queryParams: { prompt: "select_account" } } });
     if (oauthError) { setError("Não foi possível iniciar o acesso com Google. Tente novamente."); setLoading(""); }
   };
