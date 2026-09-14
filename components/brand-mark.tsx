@@ -4,7 +4,7 @@ export function BrandMark({ compact = false, loading = false, product = "moveis"
   const obra = product === "obra";
   return (
     <div className="flex items-center gap-3">
-      <Image src={obra ? "/orcaobra-logo.png" : "/pwa-company-icon-192.png"} alt={obra ? "Logo do OrçaObra" : "Logo do OrçaMóvel"} width={48} height={48} priority className={`h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ${loading ? "animate-pulse" : ""}`} />
+      <Image src={obra ? "/orcaobra-logo.png" : "/orcamovel-official-192.png"} alt={obra ? "Logo do OrçaObra" : "Logo do OrçaMóvel"} width={48} height={48} priority className={`h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ${loading ? "animate-pulse" : ""}`} />
       {!compact && (
         <div>
           <p className="text-[1.05rem] font-extrabold tracking-[-0.025em] text-[#172321]">{obra ? "OrçaObra" : "OrçaMóvel"}</p>

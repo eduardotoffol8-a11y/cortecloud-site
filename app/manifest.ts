@@ -12,9 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#f2f6f5",
     theme_color: "#0C4D46",
     icons: [
-      { src: "/pwa-company-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/pwa-company-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/app-icon-maskable.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
+      { src: "/orcamovel-install-192-v2.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/orcamovel-install-512-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
+

@@ -1,7 +1,7 @@
-const BRAND_ICON_CACHE = "orcamovel-brand-icon-v1";
+const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
 const ICON_PATHS = [
-  { path: "/pwa-company-icon-192.png", size: 192 },
-  { path: "/pwa-company-icon-512.png", size: 512 },
+  { path: "/orcamovel-install-192-v2.png", size: 192 },
+  { path: "/orcamovel-install-512-v2.png", size: 512 },
 ] as const;
 
 function imageFromSource(source: string) {
@@ -39,7 +39,7 @@ function refreshInstallMetadata() {
     appleIcon.rel = "apple-touch-icon";
     document.head.appendChild(appleIcon);
   }
-  appleIcon.href = `/pwa-company-icon-192.png?brand=${revision}`;
+  appleIcon.href = `/orcamovel-install-192-v2.png?brand=${revision}`;
 }
 
 export async function prepareCompanyInstallIcon(logo: string) {

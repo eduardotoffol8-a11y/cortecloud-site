@@ -1,6 +1,6 @@
-const CACHE = "orcamovel-v8";
-const BRAND_ICON_CACHE = "orcamovel-brand-icon-v1";
-const CORE = ["/", "/apps/moveis", "/manifest.webmanifest", "/app-icon.svg", "/pwa-company-icon-192.png", "/pwa-company-icon-512.png"];
+const CACHE = "orcamovel-v10";
+const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
+const CORE = ["/", "/apps/moveis", "/manifest.webmanifest", "/orcamovel-official-192.png", "/orcamovel-official-512.png", "/orcamovel-install-192-v2.png", "/orcamovel-install-512-v2.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)));
@@ -17,7 +17,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname === "/pwa-company-icon-192.png" || url.pathname === "/pwa-company-icon-512.png") {
+  if (url.pathname === "/orcamovel-install-192-v2.png" || url.pathname === "/orcamovel-install-512-v2.png") {
     event.respondWith(caches.open(BRAND_ICON_CACHE).then((cache) => cache.match(url.pathname)).then((custom) => custom || fetch(event.request)));
     return;
   }
