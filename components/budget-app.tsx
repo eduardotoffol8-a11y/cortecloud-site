@@ -105,6 +105,7 @@ function normalizeQuote(input: Quote): Quote {
     clientId: isUuid(input.clientId) ? input.clientId : crypto.randomUUID(),
     closing: {
       ...input.closing,
+      projectDescription: input.closing.projectDescription || "Fornecimento de móveis sob medida conforme as dimensões, materiais e acabamentos descritos nesta proposta.",
       exclusions: input.closing.exclusions || "",
       measurementIncluded: input.closing.measurementIncluded !== false,
       deliveryIncluded: input.closing.deliveryIncluded !== false,
@@ -413,7 +414,8 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     try {
       const timestamp = new Date().toISOString();
       const pdfStoragePath = quote.pdfStoragePath || `${userId}/${quote.id}.pdf`;
-      const saved = { ...quote, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: pdfBrandSignature(company) };
+      const revision = quote.pdfGeneratedAt ? Math.max(1, quote.revision || 1) + 1 : Math.max(1, quote.revision || 1);
+      const saved = { ...quote, revision, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: pdfBrandSignature(company) };
       const { projectImages, projectDocuments } = navigator.onLine ? await loadIncludedProjectFiles(saved) : { projectImages: [], projectDocuments: [] };
       const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
       if (navigator.onLine && supabase) {
