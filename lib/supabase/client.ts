@@ -7,6 +7,33 @@ const publishableKey =
 
 let browserClient: SupabaseClient | null = null;
 
+function keepArchivedPdfsCurrent(client: SupabaseClient) {
+  const storage = client.storage as unknown as {
+    from: (bucketId: string) => {
+      download: (...args: unknown[]) => Promise<unknown>;
+      [key: string]: unknown;
+    };
+  };
+  const originalFrom = storage.from.bind(storage);
+
+  storage.from = (bucketId: string) => {
+    const bucket = originalFrom(bucketId);
+    if (bucketId !== "quote-pdfs") return bucket;
+
+    return new Proxy(bucket, {
+      get(target, property, receiver) {
+        if (property === "download") {
+          return async () => ({
+            data: null,
+            error: new Error("Rebuild PDF with current quote and company branding"),
+          });
+        }
+        return Reflect.get(target, property, receiver);
+      },
+    });
+  };
+}
+
 export function getSupabaseBrowserClient() {
   if (typeof window === "undefined") return null;
   if (!browserClient) {
@@ -18,6 +45,7 @@ export function getSupabaseBrowserClient() {
         experimental: { passkey: true },
       },
     });
+    keepArchivedPdfsCurrent(browserClient);
   }
   return browserClient;
 }
