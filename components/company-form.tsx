@@ -12,7 +12,7 @@ const MAX_LOGO_UPLOAD = 8 * 1024 * 1024;
 const LEGACY_LOGO_LIMIT = 760_000;
 
 function Field({ label, className = "", children }: { label: string; className?: string; children: React.ReactNode }) {
-  return <label className={className}><span className="field-label">{label}</span>{children}</label>;
+  return <label className={`min-w-0 max-w-full ${className}`}><span className="field-label">{label}</span>{children}</label>;
 }
 
 async function canvasBlob(canvas: HTMLCanvasElement, quality: number) {
@@ -143,8 +143,8 @@ export function CompanyForm({
   };
 
   const form = (
-    <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-      <div className="app-card h-fit p-5">
+    <div className="grid w-full min-w-0 max-w-full gap-5 overflow-hidden lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="app-card h-fit min-w-0 max-w-full overflow-hidden p-5">
         <span className="field-label">Logo da empresa</span>
         <div className="mt-2 grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl border border-dashed border-[#aac1bc] bg-[#f4f8f7] p-4">
           {company.logo ? <Image src={company.logo} alt="Logo da marcenaria" width={1200} height={900} unoptimized className="max-h-full max-w-full object-contain" /> : <div className="text-center text-[#6d7e7a]"><ImagePlus size={30} className="mx-auto mb-2 text-[var(--brand)]" /><p className="text-sm font-bold">PNG, JPG ou WebP</p><p className="mt-1 text-xs">Envie até 8 MB</p></div>}
@@ -154,12 +154,12 @@ export function CompanyForm({
         {company.logo && <button type="button" onClick={() => onChange({ ...company, logo: "" })} className="quiet-button mt-1 w-full !text-rose-600"><X size={16} />Remover</button>}
         <p className={`mt-3 text-xs leading-5 ${logoNotice ? "text-[#536762]" : "text-[#7b8b87]"}`}>{logoNotice || "Para manter nitidez no PDF, imagens grandes são otimizadas automaticamente sem esticar a logo."}</p>
       </div>
-      <div className="app-card p-4 sm:p-6">
+      <div className="app-card min-w-0 max-w-full overflow-hidden p-4 sm:p-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><Building2 size={20} /></div>
           <div><h2 className="font-bold">Identificação da empresa</h2><p className="text-xs text-[#7b8b87]">{onboarding ? "Configure antes de criar o primeiro orçamento" : "Usada no cabeçalho dos PDFs"}</p></div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid min-w-0 max-w-full gap-4 md:grid-cols-2">
           <Field label="Nome da marcenaria" className="md:col-span-2"><input className="field-input" value={company.name} onChange={(event) => onChange({ ...company, name: event.target.value })} placeholder="Nome comercial" required /></Field>
           <Field label="Frase da marca" className="md:col-span-2"><input className="field-input" value={company.tagline || ""} maxLength={90} onChange={(event) => onChange({ ...company, tagline: event.target.value })} placeholder="Ex.: Móveis sob medida para transformar ambientes" /><span className="mt-1.5 block text-xs text-[#7b8b87]">Aparece logo abaixo do nome da empresa no cabeçalho do orçamento.</span></Field>
           <Field label="CNPJ ou CPF"><input className="field-input" value={company.document} onChange={(event) => onChange({ ...company, document: event.target.value })} placeholder="Documento da empresa" /></Field>
@@ -169,20 +169,20 @@ export function CompanyForm({
         </div>
         <div className="mt-6 border-t border-[#e1e9e7] pt-5">
           <div className="mb-4"><h3 className="font-bold">Cores da sua marca</h3><p className="mt-1 text-xs text-[#7b8b87]">Elas serão aplicadas automaticamente em todos os seus PDFs.</p></div>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid min-w-0 max-w-full gap-5 sm:grid-cols-2">
             <ColorPicker label="Cor principal" colors={primaryColors} value={company.primaryColor} onChange={(primaryColor) => onChange({ ...company, primaryColor })} />
             <ColorPicker label="Cor secundária" colors={secondaryColors} value={company.secondaryColor} onChange={(secondaryColor) => onChange({ ...company, secondaryColor })} />
           </div>
-          <div className="mt-5 overflow-hidden rounded-2xl border border-[#dde6e4] shadow-sm">
-            <div className="flex min-h-20 items-center justify-between gap-4 px-4 text-white" style={{ backgroundColor: company.primaryColor }}>
-              <div className="min-w-0"><span className="block truncate font-bold">{company.name || "Sua marcenaria"}</span><span className="mt-1 block truncate text-xs text-white/75">{company.tagline || "Sua frase de marca pode aparecer aqui"}</span></div>
-              <span className="shrink-0 text-xs font-extrabold uppercase tracking-widest" style={{ color: company.secondaryColor }}>Proposta comercial</span>
+          <div className="mt-5 min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#dde6e4] shadow-sm">
+            <div className="flex min-h-20 min-w-0 flex-col items-start justify-center gap-2 px-4 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:gap-4" style={{ backgroundColor: company.primaryColor }}>
+              <div className="w-full min-w-0 sm:w-auto"><span className="block truncate text-lg font-bold">{company.name || "Sua marcenaria"}</span><span className="mt-1 block truncate text-xs text-white/75">{company.tagline || "Sua frase de marca pode aparecer aqui"}</span></div>
+              <span className="max-w-full text-[0.68rem] font-extrabold uppercase tracking-[0.14em] sm:shrink-0 sm:text-xs sm:tracking-widest" style={{ color: company.secondaryColor }}>Proposta comercial</span>
             </div>
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {!onboarding && <div className="flex items-center gap-2 text-sm font-semibold text-[#47706a]"><span className="grid h-5 w-5 place-items-center rounded-full bg-[#dff1ed] text-[var(--brand)]"><Check size={13} strokeWidth={3} /></span>Sincronizado com sua conta</div>}
-          <button type="button" onClick={() => void saveWithTagline()} disabled={saving || preparingLogo} className="primary-button sm:ml-auto"><Save size={17} />{saving ? "Salvando…" : onboarding ? "Salvar e começar" : "Salvar alterações"}</button>
+          <button type="button" onClick={() => void saveWithTagline()} disabled={saving || preparingLogo} className="primary-button w-full sm:ml-auto sm:w-auto"><Save size={17} />{saving ? "Salvando…" : onboarding ? "Salvar e começar" : "Salvar alterações"}</button>
         </div>
       </div>
     </div>
@@ -191,7 +191,7 @@ export function CompanyForm({
   if (onboarding) return form;
 
   return (
-    <details className="app-card overflow-hidden">
+    <details className="app-card w-full min-w-0 max-w-full overflow-hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6 [&::-webkit-details-marker]:hidden">
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><Building2 size={20} /></span>
@@ -199,11 +199,11 @@ export function CompanyForm({
         </div>
         <span className="shrink-0 text-sm font-bold text-[var(--brand)]">Editar</span>
       </summary>
-      <div className="border-t border-[#e3ebe9] bg-[#f8fbfa] p-3 sm:p-5">{form}</div>
+      <div className="min-w-0 max-w-full overflow-hidden border-t border-[#e3ebe9] bg-[#f8fbfa] p-3 sm:p-5">{form}</div>
     </details>
   );
 }
 
 function ColorPicker({ label, colors, value, onChange }: { label: string; colors: string[]; value: string; onChange: (value: string) => void }) {
-  return <fieldset><legend className="field-label">{label}</legend><div className="flex flex-wrap gap-2.5">{colors.map((color) => <button key={color} type="button" onClick={() => onChange(color)} aria-label={`Escolher ${color}`} aria-pressed={value === color} className={`grid h-10 w-10 place-items-center rounded-full border-2 shadow-sm transition-transform hover:scale-105 ${value === color ? "border-[#172321] ring-2 ring-[#172321]/20 ring-offset-2" : "border-white"}`} style={{ backgroundColor: color }}>{value === color && <Check size={18} className="text-white drop-shadow" strokeWidth={3} />}</button>)}</div></fieldset>;
+  return <fieldset className="min-w-0 max-w-full"><legend className="field-label">{label}</legend><div className="flex flex-wrap gap-2.5">{colors.map((color) => <button key={color} type="button" onClick={() => onChange(color)} aria-label={`Escolher ${color}`} aria-pressed={value === color} className={`grid h-10 w-10 place-items-center rounded-full border-2 shadow-sm transition-transform hover:scale-105 ${value === color ? "border-[#172321] ring-2 ring-[#172321]/20 ring-offset-2" : "border-white"}`} style={{ backgroundColor: color }}>{value === color && <Check size={18} className="text-white drop-shadow" strokeWidth={3} />}</button>)}</div></fieldset>;
 }
