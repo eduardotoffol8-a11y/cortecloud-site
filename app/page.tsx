@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppStoreFront } from "@/components/app-store-front";
+import { AuthReturnBridge } from "@/components/auth-return-bridge";
 
 export const metadata: Metadata = {
   title: "Aplicativos Orça",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <AppStoreFront />;
+  return <><AuthReturnBridge /><AppStoreFront /></>;
 }
