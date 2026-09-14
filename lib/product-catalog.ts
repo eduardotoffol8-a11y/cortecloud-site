@@ -7,6 +7,7 @@ export type ProductDefinition = {
   description: string;
   audience: string;
   href: string;
+  presentationHref?: string;
   status: "available" | "coming-soon";
 };
 
@@ -18,6 +19,7 @@ export const productCatalog: ProductDefinition[] = [
     description: "Orçamentos profissionais para marcenaria sob medida, com clientes, projetos e PDFs personalizados.",
     audience: "Marceneiros e marcenarias",
     href: "/apps/moveis",
+    presentationHref: "/apps/moveis/apresentacao",
     status: "available",
   },
   {

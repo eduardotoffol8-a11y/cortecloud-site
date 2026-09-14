@@ -68,7 +68,7 @@ function FeaturedApp() {
           <p className="mt-5 text-lg font-bold leading-7 text-[#31413e]">Orçamentos profissionais para marcenaria, direto do celular.</p>
           <p className="mt-3 max-w-xl text-sm leading-6 text-[#687875]">Cadastre clientes, organize projetos, calcule móveis e gere propostas em PDF com a identidade da sua marcenaria.</p>
           <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-[#52635f]"><span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-[var(--brand)]" />30 dias grátis</span><span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-[var(--brand)]" />Sem cartão</span><span className="flex items-center gap-1.5"><BadgeCheck size={16} className="text-[var(--brand)]" />Todos os recursos</span></div>
-          <div className="mt-7 flex flex-col gap-2 sm:flex-row"><Link href={product.href} className="primary-button">Testar grátis <ArrowRight size={17} /></Link><a href="#previa" className="secondary-button">Ver prévia</a></div>
+          <div className="mt-7 flex flex-col gap-2 sm:flex-row"><Link href={product.presentationHref ?? product.href} className="primary-button">Conhecer OrçaMóvel <ArrowRight size={17} /></Link><a href="#previa" className="secondary-button">Ver prévia</a></div>
           <div className="mt-6 flex items-center gap-3 border-t border-[#edf1f0] pt-5"><div className="flex items-center gap-0.5 text-[#c2a25f]" aria-label="Avaliações ainda não disponíveis">{[1, 2, 3, 4, 5].map((item) => <Star key={item} size={15} />)}</div><p className="text-xs font-semibold text-[#7a8985]">Novo na plataforma · avaliações públicas em breve</p></div>
         </div>
         <div className="relative min-h-[27rem] overflow-hidden bg-[linear-gradient(135deg,#092f2c,#0f766e_55%,#c1a15f)] p-5 sm:p-8">
@@ -99,7 +99,7 @@ function AppCard({ product }: { product: ProductDefinition }) {
         <div className="flex items-start justify-between gap-3"><div><h3 className="text-xl font-extrabold tracking-[-0.035em] text-[#172321]">{product.name}</h3><p className="mt-1 text-xs font-semibold text-[#82908d]">{product.audience}</p></div>{available && <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.65rem] font-extrabold text-emerald-700">30 dias grátis</span>}</div>
         <p className="mt-4 min-h-[4.5rem] text-sm leading-6 text-[#687875]">{product.description}</p>
         <div className="mt-4 border-t border-[#eef2f1] pt-4">
-          {available ? <Link href={product.href} className="flex items-center justify-between font-bold text-[var(--brand)]"><span>Conhecer aplicativo</span><ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link> : <div className="flex items-center justify-between text-sm font-bold text-[#8b9996]"><span>Em desenvolvimento</span><Sparkles size={16} /></div>}
+          {available ? <Link href={product.presentationHref ?? product.href} className="flex items-center justify-between font-bold text-[var(--brand)]"><span>Conhecer aplicativo</span><ArrowRight size={17} className="transition-transform group-hover:translate-x-1" /></Link> : <div className="flex items-center justify-between text-sm font-bold text-[#8b9996]"><span>Em desenvolvimento</span><Sparkles size={16} /></div>}
         </div>
       </div>
     </article>
