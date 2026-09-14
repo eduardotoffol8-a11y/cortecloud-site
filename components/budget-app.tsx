@@ -2,7 +2,7 @@
 
 import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
-  FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2,
+  Eye, FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2, X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
@@ -176,6 +176,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [onboarding, setOnboarding] = useState(false);
   const [notice, setNotice] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pdfViewer, setPdfViewer] = useState<{ url: string; fileName: string; title: string; blob: Blob } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [menuQuote, setMenuQuote] = useState<string | null>(null);
@@ -420,6 +421,21 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     };
   }, [supabase]);
 
+  const openPdfViewer = useCallback((blob: Blob, fileName: string, title: string) => {
+    const url = URL.createObjectURL(blob);
+    setPdfViewer((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return { url, fileName, title, blob };
+    });
+  }, []);
+
+  const closePdfViewer = useCallback(() => {
+    setPdfViewer((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  }, []);
+
   const handleGeneratePdf = async () => {
     if (!company.name) { setView("settings"); return setNotice("Cadastre a marcenaria antes de gerar o PDF."); }
     if (!quote.client.name) return setNotice("Informe o nome do cliente.");
@@ -439,8 +455,8 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       }
       setQuote(saved);
       setHistory((current) => current.some((item) => item.id === saved.id) ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
-      downloadBlob(generated.blob, generated.fileName);
-      setNotice(navigator.onLine ? (quote.pdfGeneratedAt ? "PDF atualizado e arquivado." : "PDF gerado e arquivado.") : "PDF gerado offline e salvo neste aparelho.");
+      openPdfViewer(generated.blob, generated.fileName, `${saved.number} — ${saved.client.name || "Cliente"}`);
+      setNotice(navigator.onLine ? (quote.pdfGeneratedAt ? "PDF revisado salvo no OrçaMóvel." : "PDF salvo no OrçaMóvel.") : "PDF gerado offline e aberto no OrçaMóvel.");
     } catch {
       setNotice("Não foi possível gerar o PDF. Confira os dados e tente novamente.");
     } finally {
@@ -448,15 +464,15 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     }
   };
 
-  const downloadSavedPdf = async (saved: Quote) => {
+  const openSavedPdf = async (saved: Quote) => {
     try {
       const currentBrandSignature = pdfBrandSignature(company);
       const needsBrandRefresh = saved.pdfBrandSignature !== currentBrandSignature;
       if (!needsBrandRefresh && saved.pdfStoragePath && supabase) {
         const stored = await supabase.storage.from("quote-pdfs").download(saved.pdfStoragePath);
         if (!stored.error && stored.data) {
-          downloadBlob(stored.data, `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`);
-          setNotice("Download iniciado.");
+          openPdfViewer(stored.data, `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`, `${saved.number} — ${saved.client.name || "Cliente"}`);
+          setNotice("PDF aberto dentro do OrçaMóvel.");
           return;
         }
       }
@@ -472,10 +488,10 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         setHistory((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
         if (quote.id === refreshed.id) setQuote(refreshed);
       }
-      downloadBlob(generated.blob, generated.fileName);
-      setNotice(needsBrandRefresh ? "PDF atualizado com a identidade visual atual e arquivado." : "Download iniciado.");
+      openPdfViewer(generated.blob, generated.fileName, `${refreshed.number} — ${refreshed.client.name || "Cliente"}`);
+      setNotice(needsBrandRefresh ? "PDF atualizado e aberto no OrçaMóvel." : "PDF aberto dentro do OrçaMóvel.");
     } catch {
-      setNotice("Não foi possível baixar este PDF.");
+      setNotice("Não foi possível abrir este PDF.");
     }
   };
 
@@ -669,7 +685,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
           <div className="app-card p-4 md:col-span-2"><p className="text-xs font-bold uppercase tracking-wide text-[#81908c]">Local da obra</p><p className="mt-2 text-sm font-semibold leading-6">{selectedClient.info.address || "Não informado"}</p></div>
         </div>
         <div className="mb-4 flex justify-end"><button onClick={() => setClientDraft(selectedClient.info)} className="secondary-button !min-h-10"><PencilLine size={16} />Editar cadastro</button></div>
-        <div className="app-card overflow-hidden"><div className="border-b border-[#e3ebe9] px-5 py-4"><h2 className="font-bold">Projetos e orçamentos</h2></div>{selectedClient.quotes.length ? <div className="divide-y divide-[#e7eeec]">{selectedClient.quotes.map((item) => <DocumentRow key={item.id} item={item} onOpen={() => openQuote(item)} onDownload={() => void downloadSavedPdf(item)} showDownload={Boolean(item.pdfGeneratedAt)} />)}</div> : <EmptyState icon={<FilePlus2 size={25}/>} title="Nenhum projeto nesta pasta" text="Crie o primeiro projeto para este cliente." action={<button onClick={() => startProjectForClient(selectedClient.info)} className="primary-button mt-5"><Plus size={17}/>Novo projeto</button>} />}</div>
+        <div className="app-card overflow-hidden"><div className="border-b border-[#e3ebe9] px-5 py-4"><h2 className="font-bold">Projetos e orçamentos</h2></div>{selectedClient.quotes.length ? <div className="divide-y divide-[#e7eeec]">{selectedClient.quotes.map((item) => <DocumentRow key={item.id} item={item} onEdit={() => openQuote(item)} onView={() => void openSavedPdf(item)} showView={Boolean(item.pdfGeneratedAt)} />)}</div> : <EmptyState icon={<FilePlus2 size={25}/>} title="Nenhum projeto nesta pasta" text="Crie o primeiro projeto para este cliente." action={<button onClick={() => startProjectForClient(selectedClient.info)} className="primary-button mt-5"><Plus size={17}/>Novo projeto</button>} />}</div>
         {selectedClient.quotes.some((item) => item.attachments?.length) && <div className="app-card mt-5 overflow-hidden"><div className="flex items-center gap-2 border-b border-[#e3ebe9] px-5 py-4"><Paperclip size={18} className="text-[var(--brand)]" /><h2 className="font-bold">Arquivos do projeto</h2></div><div className="divide-y divide-[#e7eeec]">{selectedClient.quotes.flatMap((item) => item.attachments || []).map((attachment) => <ClientAttachmentRow key={attachment.id} attachment={attachment} onDownload={() => void downloadAttachment(attachment)} />)}</div></div>}
       </section>
     );
@@ -695,7 +711,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <PageHeading eyebrow="Arquivo" title="PDFs gerados" action={<button onClick={startNewQuote} className="primary-button !min-h-11 !px-3"><Plus size={18} /><span className="hidden sm:inline">Novo orçamento</span></button>} />
       <SearchBox value={search} onChange={setSearch} placeholder="Buscar PDF por cliente ou número" />
       <div className="app-card overflow-hidden">
-        {pdfs.length === 0 ? <EmptyState icon={<FileText size={25} />} title={search ? "Nenhum PDF encontrado" : "Nenhum PDF arquivado"} text={search ? "Tente outro nome ou número." : "Os documentos gerados aparecem aqui para baixar novamente."} /> : <div className="divide-y divide-[#e7eeec]">{pdfs.map((item) => <DocumentRow key={item.id} item={item} onOpen={() => openQuote(item)} onDownload={() => void downloadSavedPdf(item)} showDownload />)}</div>}
+        {pdfs.length === 0 ? <EmptyState icon={<FileText size={25} />} title={search ? "Nenhum PDF encontrado" : "Nenhum PDF arquivado"} text={search ? "Tente outro nome ou número." : "Os documentos gerados ficam salvos aqui para visualizar quando precisar."} /> : <div className="divide-y divide-[#e7eeec]">{pdfs.map((item) => <DocumentRow key={item.id} item={item} onEdit={() => openQuote(item)} onView={() => void openSavedPdf(item)} showView />)}</div>}
       </div>
     </section>
   );
@@ -741,7 +757,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#f1f6f4] px-3 py-1.5 text-xs font-bold text-[#64746f] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton companyLogo={company.logo} onRequestLogo={() => setView("settings")} /></div></div></header>
       <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? quoteStartMode ? <QuoteClientPicker mode={quoteStartMode} clients={quoteClients} search={quoteClientSearch} onSearch={setQuoteClientSearch} onChooseExisting={() => setQuoteStartMode("existing")} onChooseNew={() => beginQuoteForClient()} onSelect={(client) => beginQuoteForClient(client)} onBack={() => quoteStartMode === "existing" ? (setQuoteClientSearch(""), setQuoteStartMode("choose")) : (setQuoteStartMode(null), setView("dashboard"))} /> : <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setClientDraft(null), setQuoteStartMode(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
-      {calculatorEnabled && view !== "settings" ? <FloatingCalculator /> : null}
+      {calculatorEnabled && view !== "settings" && !pdfViewer ? <FloatingCalculator /> : null}
+      {pdfViewer && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#f2f6f5]" role="dialog" aria-modal="true" aria-label={`Visualização de ${pdfViewer.title}`}>
+          <header className="flex min-h-16 items-center gap-3 border-b border-[#dce6e3] bg-white px-3 py-2 shadow-sm sm:px-5">
+            <button type="button" onClick={closePdfViewer} className="quiet-button !min-h-11 !w-11 !p-0" aria-label="Fechar PDF"><X size={21} /></button>
+            <div className="min-w-0 flex-1"><p className="truncate font-bold text-[#172321]">{pdfViewer.title}</p><p className="text-xs text-[#74837f]">Arquivo salvo no OrçaMóvel</p></div>
+            <button type="button" onClick={() => downloadBlob(pdfViewer.blob, pdfViewer.fileName)} className="secondary-button !min-h-11 !px-3"><Download size={17} /><span className="hidden sm:inline">Baixar uma cópia</span></button>
+          </header>
+          <iframe src={pdfViewer.url} title={pdfViewer.title} className="min-h-0 flex-1 border-0 bg-[#dfe5e3]" />
+        </div>
+      )}
       {notice && <Notice text={notice} />}
     </div>
   );
@@ -803,11 +829,11 @@ function QuoteRow({ item, onOpen, onStatus, menuOpen, onMenu, onDelete }: { item
   </article>;
 }
 
-function DocumentRow({ item, onOpen, onDownload, showDownload }: { item: Quote; onOpen: () => void; onDownload: () => void; showDownload: boolean }) {
+function DocumentRow({ item, onEdit, onView, showView }: { item: Quote; onEdit: () => void; onView: () => void; showView: boolean }) {
   return <article className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><FileText size={21} /></span>
-    <button onClick={onOpen} className="min-w-0 flex-1 text-left"><p className="truncate font-bold">{item.client.name || "Cliente sem nome"}</p><p className="mt-1 truncate text-sm text-[#74837f]">{item.number} · {formatDate(item.pdfGeneratedAt || item.updatedAt)} · {brl(quoteTotal(item))}</p></button>
-    <div className="flex gap-2">{showDownload && <button onClick={onDownload} className="secondary-button !min-h-10 !px-3"><Download size={16} />Baixar</button>}<button onClick={onOpen} className="quiet-button !min-h-10 !px-3">Abrir</button></div>
+    <button onClick={showView ? onView : onEdit} className="min-w-0 flex-1 text-left"><p className="truncate font-bold">{item.client.name || "Cliente sem nome"}</p><p className="mt-1 truncate text-sm text-[#74837f]">{item.number} · {formatDate(item.pdfGeneratedAt || item.updatedAt)} · {brl(quoteTotal(item))}</p></button>
+    <div className="flex gap-2">{showView && <button onClick={onView} className="primary-button !min-h-10 !px-3"><Eye size={16} />Ver PDF</button>}<button onClick={onEdit} className="quiet-button !min-h-10 !px-3"><PencilLine size={15} />Editar</button></div>
   </article>;
 }
 
