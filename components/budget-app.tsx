@@ -199,7 +199,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   };
 
   const shareOrcaMovel = async () => {
-    const url = window.location.origin;
+    const url = `${window.location.origin}/?utm_source=indicacao&utm_medium=compartilhamento&v=20260914-2`;
     const shareData = {
       title: "OrçaMóvel",
       text: "Conheça o OrçaMóvel: orçamentos profissionais para marcenaria, direto no celular ou computador.",
