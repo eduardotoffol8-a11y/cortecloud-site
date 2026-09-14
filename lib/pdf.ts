@@ -45,7 +45,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const mist = paleColor(emerald);
   let y = 0;
 
-  const textStyle = (color: [number, number, number] = ink, size = 10.4, style: "normal" | "bold" = "normal") => {
+  const textStyle = (color: [number, number, number] = ink, size = 10.8, style: "normal" | "bold" = "normal") => {
     doc.setTextColor(...color);
     doc.setFont("helvetica", style);
     doc.setFontSize(size);
@@ -56,7 +56,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const sectionTitle = (label: string) => {
     doc.setFillColor(...gold);
     doc.roundedRect(margin, y - 2.7, 1.8, 6.2, 0.8, 0.8, "F");
-    textStyle(emerald, 9.4, "bold");
+    textStyle(emerald, 9.8, "bold");
     doc.text(label.toUpperCase(), margin + 5.5, y + 1.2);
     y += 8;
   };
@@ -94,11 +94,16 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   }
 
   const brandWidth = company.logo ? 87 : 118;
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("times", "bold");
+  doc.setFontSize(18.2);
+  doc.setLineHeightFactor(1.12);
+  doc.setCharSpace(0.12);
   const companyNameLines = (doc.splitTextToSize(company.name || "Sua marcenaria", brandWidth) as string[]).slice(0, 2);
-  textStyle([255, 255, 255], 15.8, "bold"); doc.text(companyNameLines, brandX, 13.5);
-  const taglineY = 14 + companyNameLines.length * 5.6 + 1.8;
+  doc.text(companyNameLines, brandX, 13.8);
+  const taglineY = 14.2 + companyNameLines.length * 6.3 + 1.5;
   const tagline = company.tagline?.trim() || "Marcenaria sob medida";
-  textStyle([220, 235, 232], 9.2); doc.text((doc.splitTextToSize(tagline, brandWidth) as string[]).slice(0, 1), brandX, Math.min(taglineY, 31));
+  textStyle([220, 235, 232], 9.5); doc.text((doc.splitTextToSize(tagline, brandWidth) as string[]).slice(0, 1), brandX, Math.min(taglineY, 31));
 
   textStyle([229, 195, 132], 8.7, "bold"); doc.text("PROPOSTA COMERCIAL", pageWidth - margin, 10.5, { align: "right" });
   textStyle([255, 255, 255], 14.2, "bold"); doc.text(quote.number, pageWidth - margin, 19, { align: "right" });
@@ -119,8 +124,8 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     const x = margin + index * (controlWidth + controlGap);
     doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(x, y, controlWidth, 17, 2, 2, "FD");
     doc.setFillColor(...gold); doc.roundedRect(x + 3, y + 3, 1.2, 4.2, 0.5, 0.5, "F");
-    textStyle(muted, 7.3, "bold"); doc.text(label, x + 6.5, y + 6.2);
-    textStyle(ink, 10.4, "bold"); doc.text(value, x + 6.5, y + 13.1);
+    textStyle(muted, 7.7, "bold"); doc.text(label, x + 6.5, y + 6.2);
+    textStyle(ink, 10.8, "bold"); doc.text(value, x + 6.5, y + 13.1);
   });
 
   y = 76; sectionTitle("Identificação das partes");
@@ -137,13 +142,13 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const drawParty = (x: number, title: string, name: string, document: string, contact: string, email: string, address: string) => {
     doc.setDrawColor(...line); doc.setFillColor(252, 253, 253); doc.roundedRect(x, y, partyWidth, partyHeight, 2.5, 2.5, "FD");
     doc.setFillColor(...emerald); doc.roundedRect(x, y, partyWidth, 9, 2.5, 2.5, "F"); doc.rect(x, y + 4.5, partyWidth, 4.5, "F");
-    textStyle([255, 255, 255], 8.2, "bold"); doc.text(title, x + 5, y + 6.2);
+    textStyle([255, 255, 255], 8.6, "bold"); doc.text(title, x + 5, y + 6.2);
     const party = partyRows(name, document, contact, email, address);
-    textStyle(ink, 10.8, "bold"); doc.text(party.nameLines, x + 5, y + 15.5);
+    textStyle(ink, 11.3, "bold"); doc.text(party.nameLines, x + 5, y + 15.5);
     let rowY = y + 20 + party.nameLines.length * 4.6;
     party.rows.forEach(({ label, lines }) => {
-      textStyle(muted, 7.1, "bold"); doc.text(label, x + 5, rowY);
-      textStyle(ink, 8.7); doc.text(lines, x + 28, rowY);
+      textStyle(muted, 7.5, "bold"); doc.text(label, x + 5, rowY);
+      textStyle(ink, 9.2); doc.text(lines, x + 28, rowY);
       rowY += Math.max(5.7, lines.length * 4 + 1.2);
     });
   };
@@ -153,27 +158,27 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   y += partyHeight + 8;
   doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, 13.5, 2.2, 2.2, "FD");
   textStyle(muted, 7.3, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 5);
-  textStyle(emerald, 9.8, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 10.8);
+  textStyle(emerald, 10.2, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 10.8);
   y += 22; sectionTitle("Móveis e especificações");
 
   quote.furniture.forEach((item, index) => {
     const specs = `${item.width || "-"} L x ${item.height || "-"} A x ${item.depth || "-"} P mm  |  MDF ${item.mdfThickness || "-"} mm  |  ${item.mdfColor || "Cor não informada"}`;
     const specLines = doc.splitTextToSize(specs, contentWidth - 18) as string[];
     const detailLines = doc.splitTextToSize(itemDetails(item), contentWidth - 18) as string[];
-    const rowHeight = Math.max(30, 19 + specLines.length * 4.5 + detailLines.length * 4.5);
+    const rowHeight = Math.max(31.5, 19.5 + specLines.length * 4.8 + detailLines.length * 4.8);
     ensureSpace(rowHeight + 5);
     doc.setDrawColor(...line); doc.setLineWidth(0.25); doc.setFillColor(252, 253, 253);
     doc.roundedRect(margin, y, contentWidth, rowHeight, 2.4, 2.4, "FD");
     doc.setFillColor(...emerald); doc.roundedRect(margin + 4, y + 5, 10.5, 8.5, 2, 2, "F");
     textStyle([255, 255, 255], 8.4, "bold"); doc.text(String(index + 1).padStart(2, "0"), margin + 9.25, y + 10.8, { align: "center" });
-    textStyle(ink, 11.2, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} - ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 11);
-    textStyle(muted, 8.8); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - (quote.closing.showItemPrices !== false ? 47 : 4), y + 11, { align: "right" });
+    textStyle(ink, 11.7, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} - ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 11);
+    textStyle(muted, 9.2); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - (quote.closing.showItemPrices !== false ? 47 : 4), y + 11, { align: "right" });
     if (quote.closing.showItemPrices !== false) {
-      textStyle(emerald, 11.2, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 11, { align: "right" });
+      textStyle(emerald, 11.7, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 11, { align: "right" });
     }
     let rowY = y + 18.5;
-    textStyle(muted, 9.3); doc.text(specLines, margin + 5, rowY); rowY += specLines.length * 4.5 + 2.2;
-    textStyle(ink, 9.1); doc.text(detailLines, margin + 5, rowY);
+    textStyle(muted, 9.7); doc.text(specLines, margin + 5, rowY); rowY += specLines.length * 4.8 + 2.2;
+    textStyle(ink, 9.5); doc.text(detailLines, margin + 5, rowY);
     y += rowHeight + 5;
   });
 
@@ -235,8 +240,8 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, termsHeight, 2.5, 2.5, "FD");
   let termY = y + 6.5;
   termLines.forEach(({ label, lines }) => {
-    textStyle(emerald, 9.1, "bold"); doc.text(label, margin + 6, termY);
-    textStyle(ink, 9.3); doc.text(lines, margin + 38, termY);
+    textStyle(emerald, 9.5, "bold"); doc.text(label, margin + 6, termY);
+    textStyle(ink, 9.7); doc.text(lines, margin + 38, termY);
     termY += Math.max(6.5, lines.length * 4.5 + 1.6);
   });
   y += termsHeight + 9;
@@ -254,12 +259,12 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   }
 
   ensureSpace(28);
-  textStyle(muted, 8.5);
+  textStyle(muted, 8.9);
   const acceptance = "Ao assinar, o cliente declara estar de acordo com o escopo, os valores e as condições comerciais desta proposta.";
   doc.text(doc.splitTextToSize(acceptance, contentWidth), margin, y + 1);
   y += 14;
   doc.setDrawColor(152, 166, 162); doc.line(margin, y, margin + 70, y); doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
-  textStyle(muted, 8.5); doc.text("Responsável pela marcenaria", margin + 35, y + 5.5, { align: "center" }); doc.text("Cliente", pageWidth - margin - 35, y + 5.5, { align: "center" });
+  textStyle(muted, 8.9); doc.text("Responsável pela marcenaria", margin + 35, y + 5.5, { align: "center" }); doc.text("Cliente", pageWidth - margin - 35, y + 5.5, { align: "center" });
 
   projectImages.forEach((image, index) => {
     doc.addPage(); continuationHeader(); sectionTitle(`Referência visual ${String(index + 1).padStart(2, "0")} / ${String(projectImages.length).padStart(2, "0")}`);
