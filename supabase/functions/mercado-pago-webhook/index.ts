@@ -78,5 +78,6 @@ Deno.serve(async (request) => {
     email = await sendPurchaseEmail(profile.email, plan, amount, paymentId, accessExpiresAt);
     if (email.sent) await admin.from("payment_events").update({ confirmation_email_sent_at: new Date().toISOString(), confirmation_email_id: email.id }).eq("payment_id", paymentId);
   }
+  if (!email.sent) return Response.json({ activated: true, confirmationEmailSent: false, error: email.reason }, { status: 503 });
   return Response.json({ activated: true, confirmationEmailSent: email.sent });
 });
