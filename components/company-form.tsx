@@ -125,7 +125,7 @@ export function CompanyForm({
           await supabase.from("company_profiles").upsert({
             user_id: auth.user.id,
             name: company.name.trim(),
-            tagline: company.tagline.trim(),
+            tagline: (company.tagline || "").trim(),
             document: company.document,
             contact: company.contact,
             email: company.email,
@@ -161,7 +161,7 @@ export function CompanyForm({
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Nome da marcenaria" className="md:col-span-2"><input className="field-input" value={company.name} onChange={(event) => onChange({ ...company, name: event.target.value })} placeholder="Nome comercial" required /></Field>
-          <Field label="Frase da marca" className="md:col-span-2"><input className="field-input" value={company.tagline} maxLength={90} onChange={(event) => onChange({ ...company, tagline: event.target.value })} placeholder="Ex.: Móveis sob medida para transformar ambientes" /><span className="mt-1.5 block text-xs text-[#7b8b87]">Aparece logo abaixo do nome da empresa no cabeçalho do orçamento.</span></Field>
+          <Field label="Frase da marca" className="md:col-span-2"><input className="field-input" value={company.tagline || ""} maxLength={90} onChange={(event) => onChange({ ...company, tagline: event.target.value })} placeholder="Ex.: Móveis sob medida para transformar ambientes" /><span className="mt-1.5 block text-xs text-[#7b8b87]">Aparece logo abaixo do nome da empresa no cabeçalho do orçamento.</span></Field>
           <Field label="CNPJ ou CPF"><input className="field-input" value={company.document} onChange={(event) => onChange({ ...company, document: event.target.value })} placeholder="Documento da empresa" /></Field>
           <Field label="Contato"><input className="field-input" value={company.contact} onChange={(event) => onChange({ ...company, contact: event.target.value })} placeholder="Telefone ou WhatsApp" required /></Field>
           <Field label="E-mail"><input className="field-input" value={company.email} onChange={(event) => onChange({ ...company, email: event.target.value })} inputMode="email" placeholder="contato@empresa.com" /></Field>
