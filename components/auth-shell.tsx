@@ -108,6 +108,15 @@ export function AuthShell() {
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 60_000); return () => window.clearInterval(timer); }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("plans") === "1") window.localStorage.setItem("orcamovel.open-plans", "1");
+    if (!session || !profile || window.localStorage.getItem("orcamovel.open-plans") !== "1") return;
+    setShowPlans(true);
+    window.localStorage.removeItem("orcamovel.open-plans");
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [profile, session]);
+
+  useEffect(() => {
     if (!supabase) return;
     const refreshWhenVisible = () => { if (document.visibilityState === "visible") void refreshCurrentProfile(); };
     const refreshOnFocus = () => void refreshCurrentProfile();
