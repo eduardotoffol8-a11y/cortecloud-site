@@ -52,7 +52,12 @@ function formatDate(value: string) {
 
 function isQuoteStarted(quote: Quote) {
   return Boolean(
-    quote.client.projectName.trim()
+    quote.client.name.trim()
+    || quote.client.phone.trim()
+    || quote.client.email.trim()
+    || quote.client.document.trim()
+    || quote.client.projectName.trim()
+    || quote.client.address.trim()
     || quote.furniture.some((item) => item.name.trim() || item.environment.trim() || item.unitPrice.trim() || item.width.trim() || item.height.trim() || item.depth.trim() || item.extras.trim()),
   );
 }
@@ -155,6 +160,8 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [clientDraft, setClientDraft] = useState<RegisteredClient | null>(null);
   const [search, setSearch] = useState("");
   const [showPlans, setShowPlans] = useState(false);
+  const [quoteStartMode, setQuoteStartMode] = useState<"choose" | "existing" | null>(null);
+  const [quoteClientSearch, setQuoteClientSearch] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -294,22 +301,29 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
   const startNewQuote = useCallback(() => {
     if (isQuoteStarted(quote) && !window.confirm("Iniciar um novo orçamento? O rascunho atual será substituído.")) return;
-    setQuote(createEmptyQuote(nextQuoteNumber(history)));
     setView("quote");
     setSelectedClientId(null);
-    setNotice("Novo orçamento iniciado.");
-  }, [history, quote]);
+    setQuoteClientSearch("");
+    setQuoteStartMode("choose");
+  }, [quote]);
+
+  const beginQuoteForClient = useCallback((client?: RegisteredClient) => {
+    const next = createEmptyQuote(nextQuoteNumber(history));
+    if (client) {
+      next.clientId = client.id;
+      next.client = { name: client.name, phone: client.phone, email: client.email, document: client.document, address: client.address, projectName: "" };
+    }
+    setQuote(next);
+    setSelectedClientId(null);
+    setQuoteStartMode(null);
+    setView("quote");
+    setNotice(client ? `Projeto iniciado na pasta de ${client.name}.` : "Novo cliente: preencha os dados abaixo.");
+  }, [history]);
 
   const startProjectForClient = useCallback((client: RegisteredClient) => {
     if (isQuoteStarted(quote) && !window.confirm("Iniciar um novo projeto? O rascunho atual será substituído.")) return;
-    const next = createEmptyQuote(nextQuoteNumber(history));
-    next.clientId = client.id;
-    next.client = { name: client.name, phone: client.phone, email: client.email, document: client.document, address: client.address, projectName: "" };
-    setQuote(next);
-    setSelectedClientId(null);
-    setView("quote");
-    setNotice("Novo projeto iniciado nesta pasta.");
-  }, [history, quote]);
+    beginQuoteForClient(client);
+  }, [beginQuoteForClient, quote]);
 
   const beginClientRegistration = () => {
     const timestamp = new Date().toISOString();
@@ -436,6 +450,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
   const openQuote = (selected: Quote) => {
     setQuote(selected);
+    setQuoteStartMode(null);
     setView("quote");
     setMenuQuote(null);
     setSelectedClientId(null);
@@ -581,6 +596,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   }, [clients, history]);
 
   const filteredClients = clientFolders.filter((client) => `${client.info.name} ${client.info.phone} ${client.info.email} ${client.info.address}`.toLowerCase().includes(search.toLowerCase()));
+  const quoteClients = clientFolders.filter((client) => `${client.info.name} ${client.info.phone} ${client.info.email} ${client.info.address}`.toLowerCase().includes(quoteClientSearch.trim().toLowerCase()));
   const selectedClient = clientFolders.find((client) => client.id === selectedClientId);
   const pdfs = history.filter((item) => item.pdfGeneratedAt).filter((item) => `${item.client.name} ${item.number} ${item.client.projectName}`.toLowerCase().includes(search.toLowerCase()));
 
@@ -667,7 +683,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     const context = (document as WebMcpDocument).modelContext;
     if (!context?.registerTool) return;
     const lifecycle = new AbortController();
-    void Promise.resolve(context.registerTool({ name: "start_new_quote", title: "Iniciar novo orçamento", description: "Abre um orçamento vazio na primeira etapa.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: () => { startNewQuote(); return { status: "started" }; } }, { signal: lifecycle.signal })).catch(() => undefined);
+    void Promise.resolve(context.registerTool({ name: "start_new_quote", title: "Iniciar novo orçamento", description: "Abre a escolha entre cliente novo ou já cadastrado.", inputSchema: { type: "object", properties: {}, additionalProperties: false }, annotations: { readOnlyHint: false, untrustedContentHint: false }, execute: () => { startNewQuote(); return { status: "client_selection_opened" }; } }, { signal: lifecycle.signal })).catch(() => undefined);
     return () => lifecycle.abort();
   }, [startNewQuote]);
 
@@ -691,11 +707,38 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   return (
     <div className="min-h-screen" style={companyTheme(company)}>
       <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#f1f6f4] px-3 py-1.5 text-xs font-bold text-[#64746f] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton companyLogo={company.logo} onRequestLogo={() => setView("settings")} /></div></div></header>
-      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
-      <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setClientDraft(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
+      <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? quoteStartMode ? <QuoteClientPicker mode={quoteStartMode} clients={quoteClients} search={quoteClientSearch} onSearch={setQuoteClientSearch} onChooseExisting={() => setQuoteStartMode("existing")} onChooseNew={() => beginQuoteForClient()} onSelect={(client) => beginQuoteForClient(client)} onBack={() => quoteStartMode === "existing" ? (setQuoteClientSearch(""), setQuoteStartMode("choose")) : (setQuoteStartMode(null), setView("dashboard"))} /> : <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
+      <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setClientDraft(null), setQuoteStartMode(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
       {notice && <Notice text={notice} />}
     </div>
   );
+}
+
+function QuoteClientPicker({ mode, clients, search, onSearch, onChooseExisting, onChooseNew, onSelect, onBack }: { mode: "choose" | "existing"; clients: ClientFolder[]; search: string; onSearch: (value: string) => void; onChooseExisting: () => void; onChooseNew: () => void; onSelect: (client: RegisteredClient) => void; onBack: () => void }) {
+  if (mode === "choose") return <section className="view-enter">
+    <button type="button" onClick={onBack} className="quiet-button mb-4 !px-2"><ChevronLeft size={18} />Cancelar</button>
+    <PageHeading eyebrow="Novo orçamento" title="Para qual cliente?" />
+    <p className="mb-5 max-w-xl text-sm leading-6 text-[#687875]">Escolha uma opção para manter os projetos organizados na pasta certa.</p>
+    <div className="grid gap-4 md:grid-cols-2">
+      <button type="button" onClick={onChooseExisting} className="app-card group flex min-h-44 items-start gap-4 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--brand-border)] hover:shadow-lg sm:p-6">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]"><FolderOpen size={24} /></span>
+        <span><span className="block text-lg font-extrabold text-[#172321]">Cliente existente</span><span className="mt-2 block text-sm leading-6 text-[#687875]">Busque pelo nome e use os dados já cadastrados.</span><span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--brand)]">Buscar cliente <ChevronRight size={16} /></span></span>
+      </button>
+      <button type="button" onClick={onChooseNew} className="app-card group flex min-h-44 items-start gap-4 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--brand-border)] hover:shadow-lg sm:p-6">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[var(--brand)] text-white"><Plus size={24} /></span>
+        <span><span className="block text-lg font-extrabold text-[#172321]">Novo cliente</span><span className="mt-2 block text-sm leading-6 text-[#687875]">Cadastre o cliente e crie a pasta automaticamente.</span><span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--brand)]">Cadastrar agora <ChevronRight size={16} /></span></span>
+      </button>
+    </div>
+  </section>;
+
+  return <section className="view-enter">
+    <button type="button" onClick={onBack} className="quiet-button mb-4 !px-2"><ChevronLeft size={18} />Voltar</button>
+    <PageHeading eyebrow="Cliente existente" title="Encontre o cliente" action={<button type="button" onClick={onChooseNew} className="secondary-button !min-h-10 !px-3"><Plus size={16} /><span className="hidden sm:inline">Novo cliente</span><span className="sm:hidden">Novo</span></button>} />
+    <SearchBox value={search} onChange={onSearch} placeholder="Buscar por nome, telefone ou endereço" />
+    <div className="app-card overflow-hidden">
+      {clients.length ? <div className="divide-y divide-[#e7eeec]">{clients.map((folder) => <button key={folder.id} type="button" onClick={() => onSelect(folder.info)} className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-[#f8fbfa] sm:px-5"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><Folder size={21} fill="currentColor" /></span><span className="min-w-0 flex-1"><span className="block truncate font-bold text-[#172321]">{folder.info.name}</span><span className="mt-1 block truncate text-sm text-[#74837f]">{folder.info.phone || folder.info.address || "Sem contato"} · {folder.quotes.length} {folder.quotes.length === 1 ? "projeto" : "projetos"}</span></span><ChevronRight size={19} className="shrink-0 text-[#93a19e]" /></button>)}</div> : <EmptyState icon={<Search size={25} />} title={search ? "Cliente não encontrado" : "Nenhum cliente cadastrado"} text={search ? "Confira o nome ou cadastre um novo cliente." : "Cadastre o primeiro cliente para começar."} action={<button type="button" onClick={onChooseNew} className="primary-button mt-5"><Plus size={17} />Cadastrar novo cliente</button>} />}
+    </div>
+  </section>;
 }
 
 function ClientRegistrationForm({ client, onChange, onSave }: { client: RegisteredClient; onChange: (client: RegisteredClient) => void; onSave: () => void }) {
