@@ -2,7 +2,7 @@
 
 import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
-  Eye, FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Trash2, X,
+  Eye, FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Share2, Trash2, X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
@@ -176,7 +176,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [onboarding, setOnboarding] = useState(false);
   const [notice, setNotice] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [pdfViewer, setPdfViewer] = useState<{ url: string; fileName: string; title: string; blob: Blob } | null>(null);
+  const [pdfViewer, setPdfViewer] = useState<{ url: string; objectUrl: string; fileName: string; title: string; blob: Blob } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [savingCompany, setSavingCompany] = useState(false);
   const [menuQuote, setMenuQuote] = useState<string | null>(null);
@@ -421,20 +421,40 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     };
   }, [supabase]);
 
-  const openPdfViewer = useCallback((blob: Blob, fileName: string, title: string) => {
-    const url = URL.createObjectURL(blob);
+  const openPdfViewer = useCallback((blob: Blob, fileName: string, title: string, remoteUrl?: string) => {
+    const objectUrl = URL.createObjectURL(blob);
     setPdfViewer((current) => {
-      if (current) URL.revokeObjectURL(current.url);
-      return { url, fileName, title, blob };
+      if (current) URL.revokeObjectURL(current.objectUrl);
+      return { url: remoteUrl || objectUrl, objectUrl, fileName, title, blob };
     });
   }, []);
 
   const closePdfViewer = useCallback(() => {
     setPdfViewer((current) => {
-      if (current) URL.revokeObjectURL(current.url);
+      if (current) URL.revokeObjectURL(current.objectUrl);
       return null;
     });
   }, []);
+
+  const sharePdf = async (blob: Blob, fileName: string, title: string) => {
+    const file = new File([blob], fileName, { type: "application/pdf" });
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: `Proposta ${title}`,
+          text: `Segue a proposta comercial ${title}.`,
+          files: [file],
+        });
+        setNotice("Proposta compartilhada.");
+        return;
+      }
+      downloadBlob(blob, fileName);
+      setNotice("O compartilhamento não está disponível neste aparelho. Uma cópia foi baixada.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setNotice("Não foi possível abrir as opções de compartilhamento.");
+    }
+  };
 
   const handleGeneratePdf = async () => {
     if (!company.name) { setView("settings"); return setNotice("Cadastre a marcenaria antes de gerar o PDF."); }
@@ -448,14 +468,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       const saved = { ...quote, revision, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: pdfBrandSignature(company) };
       const { projectImages, projectDocuments } = navigator.onLine ? await loadIncludedProjectFiles(saved) : { projectImages: [], projectDocuments: [] };
       const generated = await generateQuotePdf(saved, company, projectImages, projectDocuments);
+      let previewUrl: string | undefined;
       if (navigator.onLine && supabase) {
         const upload = await supabase.storage.from("quote-pdfs").upload(pdfStoragePath, generated.blob, { contentType: "application/pdf", upsert: true });
         if (upload.error) throw upload.error;
         await persistQuote(saved);
+        const signed = await supabase.storage.from("quote-pdfs").createSignedUrl(pdfStoragePath, 3_600);
+        previewUrl = signed.data?.signedUrl;
       }
       setQuote(saved);
       setHistory((current) => current.some((item) => item.id === saved.id) ? current.map((item) => item.id === saved.id ? saved : item) : [saved, ...current]);
-      openPdfViewer(generated.blob, generated.fileName, `${saved.number} — ${saved.client.name || "Cliente"}`);
+      openPdfViewer(generated.blob, generated.fileName, `${saved.number} — ${saved.client.name || "Cliente"}`, previewUrl);
       setNotice(navigator.onLine ? (quote.pdfGeneratedAt ? "PDF revisado salvo no OrçaMóvel." : "PDF salvo no OrçaMóvel.") : "PDF gerado offline e aberto no OrçaMóvel.");
     } catch {
       setNotice("Não foi possível gerar o PDF. Confira os dados e tente novamente.");
@@ -469,9 +492,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       const currentBrandSignature = pdfBrandSignature(company);
       const needsBrandRefresh = saved.pdfBrandSignature !== currentBrandSignature;
       if (!needsBrandRefresh && saved.pdfStoragePath && supabase) {
-        const stored = await supabase.storage.from("quote-pdfs").download(saved.pdfStoragePath);
+        const [stored, signed] = await Promise.all([
+          supabase.storage.from("quote-pdfs").download(saved.pdfStoragePath),
+          supabase.storage.from("quote-pdfs").createSignedUrl(saved.pdfStoragePath, 3_600),
+        ]);
         if (!stored.error && stored.data) {
-          openPdfViewer(stored.data, `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`, `${saved.number} — ${saved.client.name || "Cliente"}`);
+          openPdfViewer(
+            stored.data,
+            `${saved.number}-${safeFileName(saved.client.name || "cliente")}.pdf`,
+            `${saved.number} — ${saved.client.name || "Cliente"}`,
+            signed.data?.signedUrl,
+          );
           setNotice("PDF aberto dentro do OrçaMóvel.");
           return;
         }
@@ -481,14 +512,17 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       const pdfStoragePath = saved.pdfStoragePath || `${userId}/${saved.id}.pdf`;
       const refreshed = { ...saved, updatedAt: timestamp, pdfGeneratedAt: timestamp, pdfStoragePath, pdfBrandSignature: currentBrandSignature };
       const generated = await generateQuotePdf(refreshed, company, projectImages, projectDocuments);
+      let previewUrl: string | undefined;
       if (supabase && navigator.onLine) {
         const upload = await supabase.storage.from("quote-pdfs").upload(pdfStoragePath, generated.blob, { contentType: "application/pdf", upsert: true });
         if (upload.error) throw upload.error;
         await persistQuote(refreshed);
         setHistory((current) => current.map((item) => item.id === refreshed.id ? refreshed : item));
         if (quote.id === refreshed.id) setQuote(refreshed);
+        const signed = await supabase.storage.from("quote-pdfs").createSignedUrl(pdfStoragePath, 3_600);
+        previewUrl = signed.data?.signedUrl;
       }
-      openPdfViewer(generated.blob, generated.fileName, `${refreshed.number} — ${refreshed.client.name || "Cliente"}`);
+      openPdfViewer(generated.blob, generated.fileName, `${refreshed.number} — ${refreshed.client.name || "Cliente"}`, previewUrl);
       setNotice(needsBrandRefresh ? "PDF atualizado e aberto no OrçaMóvel." : "PDF aberto dentro do OrçaMóvel.");
     } catch {
       setNotice("Não foi possível abrir este PDF.");
@@ -763,7 +797,10 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
           <header className="flex min-h-16 items-center gap-3 border-b border-[#dce6e3] bg-white px-3 py-2 shadow-sm sm:px-5">
             <button type="button" onClick={closePdfViewer} className="quiet-button !min-h-11 !w-11 !p-0" aria-label="Fechar PDF"><X size={21} /></button>
             <div className="min-w-0 flex-1"><p className="truncate font-bold text-[#172321]">{pdfViewer.title}</p><p className="text-xs text-[#74837f]">Arquivo salvo no OrçaMóvel</p></div>
-            <button type="button" onClick={() => downloadBlob(pdfViewer.blob, pdfViewer.fileName)} className="secondary-button !min-h-11 !px-3"><Download size={17} /><span className="hidden sm:inline">Baixar uma cópia</span></button>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" onClick={() => void sharePdf(pdfViewer.blob, pdfViewer.fileName, pdfViewer.title)} className="primary-button !min-h-11 !px-3"><Share2 size={17} /><span className="hidden sm:inline">Enviar proposta</span><span className="sm:hidden">Enviar</span></button>
+              <button type="button" onClick={() => downloadBlob(pdfViewer.blob, pdfViewer.fileName)} className="quiet-button !min-h-11 !w-11 !p-0" aria-label="Baixar uma cópia"><Download size={19} /></button>
+            </div>
           </header>
           <iframe src={pdfViewer.url} title={pdfViewer.title} className="min-h-0 flex-1 border-0 bg-[#dfe5e3]" />
         </div>
