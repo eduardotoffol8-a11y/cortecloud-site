@@ -113,17 +113,20 @@ export default function MoveisPresentationPage() {
         <section id="pdf" className={styles.pdfSection}>
           <div className={`${styles.container} ${styles.pdfGrid}`}>
             <div className={styles.paperWrap}>
-              <a href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer" aria-label="Abrir PDF de exemplo do OrçaMóvel em nova aba">
-                <Image className={styles.paper} src={`${assets}/ORC-2026-001-preview-marrom.jpg`} alt="Primeira página de um orçamento real de demonstração gerado pelo OrçaMóvel, com logo, dados da marcenaria, cliente e especificações dos móveis" width={1100} height={1556} sizes="(max-width: 800px) 85vw, 440px" />
-              </a>
+              <iframe
+                className={styles.paper}
+                src={`${assets}/ORC-2026-001-exemplo-marrom.pdf#page=1&view=FitH`}
+                title="Prévia do orçamento de demonstração gerado pelo OrçaMóvel"
+                loading="lazy"
+                style={{ aspectRatio: "210 / 297", minHeight: "560px", background: "white" }}
+              />
               <p>Exemplo real de demonstração gerado no OrçaMóvel</p>
             </div>
             <div><p className={styles.eyebrow}>A SUA MARCA EM CADA DETALHE</p><h2>Seu orçamento.<br />A sua identidade.</h2><p className={styles.lead}>Transforme os detalhes do projeto em uma proposta organizada, pronta para apresentar ao cliente.</p>
               <ul className={styles.checkList}>{["Nome, logo e cores da sua marcenaria", "Móveis, medidas, materiais e acabamentos", "Valores e condições comerciais em um documento", "PDF pronto para baixar e compartilhar"].map(item => <li key={item}><Check size={19} aria-hidden="true" />{item}</li>)}</ul>
-              <p style={{ color: "#667970", fontSize: ".86rem", marginBottom: "18px" }}>Veja o mesmo orçamento com duas identidades visuais diferentes. É assim que a personalização de cores aparece no documento final.</p>
+              <p style={{ color: "#667970", fontSize: ".86rem", marginBottom: "18px" }}>Este exemplo usa uma identidade em marrom e dourado para mostrar como a proposta pode acompanhar o visual da marcenaria.</p>
               <div className={styles.pdfLinks}>
-                <a className={styles.button} href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer">Ver exemplo marrom <ArrowRight size={18} aria-hidden="true" /></a>
-                <a href={`${assets}/ORC-2026-001-exemplo-azul.pdf`} className={styles.textLink} target="_blank" rel="noopener noreferrer">Ver exemplo azul</a>
+                <a className={styles.button} href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer">Ver PDF completo <ArrowRight size={18} aria-hidden="true" /></a>
               </div>
             </div>
           </div>
