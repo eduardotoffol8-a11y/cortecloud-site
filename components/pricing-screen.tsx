@@ -102,19 +102,25 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
       : "Garanta seu acesso agora ou continue usando normalmente até o fim do período grátis.";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_15%_0%,rgba(15,118,110,0.13),transparent_28rem)] px-4 py-6 sm:py-10">
-      <div className="mx-auto max-w-4xl">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(245,158,11,0.18),transparent_28rem),linear-gradient(180deg,#fffaf5,#f7f3ef)] px-4 py-6 sm:py-10">
+      <div className="mx-auto max-w-5xl">
         <div className="mb-7 flex items-center justify-between gap-3"><BrandMark /><InstallAppButton /></div>
         {onBack && <button type="button" onClick={onBack} className="quiet-button mb-4 !px-2"><ArrowLeft size={18} />Voltar ao aplicativo</button>}
-        <section className="app-card overflow-hidden">
-          <div className="bg-[var(--brand-dark)] px-5 py-7 text-white sm:px-8">
-            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/12"><CalendarClock size={25} /></div>
+        <section className="overflow-hidden rounded-[1.55rem] border border-[#eadfd5] bg-white shadow-[0_26px_70px_rgba(91,49,24,0.12)]">
+          <div className="bg-[linear-gradient(135deg,#5c2f18,#8a451d_58%,#bd6428)] px-5 py-7 text-white sm:px-8 sm:py-8">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/15"><CalendarClock size={25} /></div>
             <h1 className="text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl">{title}</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-[#c7e0dc]">{description}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#f8e6d8]">{description}</p>
           </div>
           <div className="p-4 sm:p-7">
-            {offer.remaining > 0 && (!hasActivePlan || currentRank < planRank.lifetime) && <div className="mb-6 flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-950 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-extrabold">Oferta de lançamento: economize R$ 100</p><p className="mt-0.5 text-sm">O acesso vitalício volta para R$ 249,99 quando o prazo terminar.</p></div><span className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-3 py-2 font-mono text-sm font-extrabold shadow-sm"><Clock3 size={17} />{offer.label}</span></div>}
-            <div className="grid gap-3 md:grid-cols-3">
+            {offer.remaining > 0 && (!hasActivePlan || currentRank < planRank.lifetime) && (
+              <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-[#f3c277] bg-[linear-gradient(135deg,#fff8e6,#fff0d7)] px-4 py-4 text-[#5e3319] shadow-[0_10px_28px_rgba(183,97,28,0.08)] sm:flex-row sm:items-center sm:justify-between">
+                <div><p className="font-extrabold">Oferta de lançamento: economize R$ 100</p><p className="mt-0.5 text-sm text-[#7a4a2a]">O acesso vitalício volta para R$ 249,99 quando o prazo terminar.</p></div>
+                <span className="flex shrink-0 items-center gap-2 rounded-xl border border-[#f0d5b1] bg-white px-3 py-2 font-mono text-sm font-extrabold text-[#7b3516] shadow-sm"><Clock3 size={17} />{offer.label}</span>
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-3">
               {plans.map((plan) => {
                 const rank = planRank[plan.id];
                 const isCurrent = hasActivePlan && currentPlan === plan.id;
@@ -122,24 +128,57 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
                 const isUpgrade = hasActivePlan && rank > currentRank;
                 const blocked = checkingPlan || isCurrent || isLower;
                 const label = checkingPlan ? "Verificando…" : isCurrent ? "Plano atual" : isLower ? "Já incluído" : isUpgrade ? "Fazer upgrade" : "Escolher plano";
+
+                const cardTone = plan.id === "monthly"
+                  ? "border-[#dfd6ce] bg-white"
+                  : plan.id === "annual"
+                    ? "border-[#e5aa55] bg-[linear-gradient(180deg,#fffdf7,#fff7e9)] shadow-[0_12px_30px_rgba(190,122,34,0.08)]"
+                    : "border-[#e66b30] bg-[linear-gradient(180deg,#fff6ec,#ffead8)] shadow-[0_18px_38px_rgba(211,85,28,0.16)]";
+
+                const actionableButton = plan.id === "monthly"
+                  ? "border-[#8b6a56] bg-[#6b4a39] text-white hover:bg-[#583b2e]"
+                  : plan.id === "annual"
+                    ? "border-[#c86c13] bg-[#d97706] text-white hover:bg-[#b75f05]"
+                    : "border-[#d44716] bg-[#e4571f] text-white shadow-[0_10px_24px_rgba(228,87,31,0.24)] hover:bg-[#c94416]";
+
+                const cardState = isCurrent
+                  ? "ring-2 ring-[#7a5139] ring-offset-2"
+                  : isLower
+                    ? "opacity-60 grayscale-[0.12]"
+                    : "";
+
                 return (
-                  <article key={plan.id} className={`relative rounded-2xl border p-5 ${isCurrent ? "border-[var(--brand)] bg-[var(--brand-soft)]" : isLower ? "border-[#e5eae9] bg-[#f7f9f8] opacity-65" : plan.highlight ? "border-[var(--brand)] bg-[var(--brand-soft)] shadow-lg" : "border-[#dce5e2] bg-white"}`}>
-                    {isCurrent ? <span className="absolute -top-3 left-4 rounded-full bg-[var(--brand)] px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-wide text-white">Plano atual</span> : plan.highlight && !isLower ? <span className="absolute -top-3 left-4 rounded-full bg-[var(--brand)] px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-wide text-white">Oferta temporária</span> : null}
-                    <p className="font-bold text-[#48605b]">{plan.name}</p>
-                    <div className="mt-3 flex flex-wrap items-baseline gap-2">{"oldPrice" in plan && plan.oldPrice && !isLower && <span className="text-sm font-bold text-[#8a9794] line-through">{plan.oldPrice}</span>}<p className="text-2xl font-extrabold tracking-[-0.04em]">{plan.price}</p></div>
-                    <p className="mt-1 text-sm text-[#71817d]">{plan.detail}</p>
-                    <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#315d57]"><Check size={17} />Todos os recursos</div>
-                    <button type="button" disabled={Boolean(loading) || blocked} onClick={() => void choosePlan(plan.id)} className={`${!blocked && (plan.highlight || isUpgrade) ? "primary-button" : "secondary-button"} mt-5 w-full disabled:cursor-not-allowed disabled:opacity-60`}>
+                  <article key={plan.id} className={`relative rounded-[1.35rem] border p-5 sm:p-6 ${cardTone} ${cardState}`}>
+                    {isCurrent ? (
+                      <span className="absolute -top-3 left-4 rounded-full bg-[#6b4a39] px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-wide text-white shadow-sm">Plano atual</span>
+                    ) : plan.highlight && !isLower ? (
+                      <span className="absolute -top-3 left-4 rounded-full bg-[#e4571f] px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-wide text-white shadow-sm">Oferta temporária</span>
+                    ) : plan.id === "annual" && !isLower ? (
+                      <span className="absolute -top-3 left-4 rounded-full bg-[#d97706] px-3 py-1 text-[0.66rem] font-extrabold uppercase tracking-wide text-white shadow-sm">12 meses</span>
+                    ) : null}
+
+                    <p className="font-bold text-[#604a3b]">{plan.name}</p>
+                    <div className="mt-3 flex flex-wrap items-baseline gap-2">{"oldPrice" in plan && plan.oldPrice && !isLower && <span className="text-sm font-bold text-[#9a8273] line-through">{plan.oldPrice}</span>}<p className="text-2xl font-extrabold tracking-[-0.04em] text-[#221b17]">{plan.price}</p></div>
+                    <p className="mt-1 text-sm text-[#76665c]">{plan.detail}</p>
+                    <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#70462f]"><Check size={17} className="text-[#c76422]" />Todos os recursos</div>
+
+                    <button
+                      type="button"
+                      disabled={Boolean(loading) || blocked}
+                      onClick={() => void choosePlan(plan.id)}
+                      className={`mt-5 inline-flex min-h-[3rem] w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-extrabold transition-all disabled:cursor-not-allowed disabled:border-[#ddd5cf] disabled:bg-[#f2efec] disabled:text-[#93877e] disabled:shadow-none ${!blocked ? actionableButton : ""}`}
+                    >
                       {loading === plan.id || checkingPlan ? <LoaderCircle className="animate-spin" size={17} /> : <BadgeCheck size={17} />}{loading === plan.id ? "Abrindo…" : label}
                     </button>
                   </article>
                 );
               })}
             </div>
-            <p className="mt-4 text-center text-xs leading-5 text-[#71817d]">Os pagamentos são avulsos. O OrçaMóvel não faz renovação ou cobrança automática ao fim do período.</p>
-            {message && <p role="alert" className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-800">{message}</p>}
-            <div className="mt-5 flex flex-col items-center justify-between gap-3 border-t border-[#e3ebe9] pt-5 sm:flex-row">
-              <p className="flex items-center gap-2 text-sm font-semibold text-[#64746f]"><ShieldCheck size={17} className="text-[var(--brand)]" />Pix ou cartão processado pelo Mercado Pago · {email}</p>
+
+            <p className="mt-5 text-center text-xs leading-5 text-[#74675f]">Os pagamentos são avulsos. O OrçaMóvel não faz renovação ou cobrança automática ao fim do período.</p>
+            {message && <p role="alert" className="mt-4 rounded-xl border border-[#f1c27c] bg-[#fff7e7] px-4 py-3 text-center text-sm font-semibold text-[#8a4a16]">{message}</p>}
+            <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-[#eee4dc] pt-5 sm:flex-row">
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#6c625c]"><ShieldCheck size={17} className="text-[#d06020]" />Pix ou cartão processado pelo Mercado Pago · {email}</p>
               <div className="flex gap-2"><button onClick={() => { void loadCurrentPlan(); onRefresh(); }} className="quiet-button !min-h-10 !px-3"><RefreshCw size={16} />Atualizar</button><button onClick={onSignOut} className="quiet-button !min-h-10 !px-3"><LogOut size={16} />Sair</button></div>
             </div>
           </div>
