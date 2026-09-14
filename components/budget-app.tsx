@@ -4,7 +4,7 @@ import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
   Eye, FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Share2, Trash2, X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { CompanyForm } from "./company-form";
 import { InstallAppButton } from "./install-app-button";
@@ -802,10 +802,90 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
               <button type="button" onClick={() => downloadBlob(pdfViewer.blob, pdfViewer.fileName)} className="quiet-button !min-h-11 !w-11 !p-0" aria-label="Baixar uma cópia"><Download size={19} /></button>
             </div>
           </header>
-          <iframe src={pdfViewer.url} title={pdfViewer.title} className="min-h-0 flex-1 border-0 bg-[#dfe5e3]" />
+          <div className="min-h-0 flex-1 overflow-auto bg-[#dfe5e3] md:hidden"><PdfMobileViewer blob={pdfViewer.blob} /></div>
+          <iframe src={pdfViewer.url} title={pdfViewer.title} className="hidden min-h-0 flex-1 border-0 bg-[#dfe5e3] md:block" />
         </div>
       )}
       {notice && <Notice text={notice} />}
+    </div>
+  );
+}
+
+function PdfMobileViewer({ blob }: { blob: Blob }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadingTask: { destroy: () => Promise<void> } | undefined;
+    let pdfDocument: { numPages: number; getPage: (pageNumber: number) => Promise<{
+      getViewport: (options: { scale: number }) => { width: number; height: number };
+      render: (options: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }) => { promise: Promise<void> };
+    }>; destroy: () => Promise<void> } | undefined;
+
+    const renderPdf = async () => {
+      const container = containerRef.current;
+      if (!container) return;
+      setStatus("loading");
+      container.replaceChildren();
+
+      try {
+        const moduleUrl = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.min.mjs";
+        const workerUrl = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.min.mjs";
+        const pdfJs = await import(/* webpackIgnore: true */ moduleUrl) as unknown as {
+          GlobalWorkerOptions: { workerSrc: string };
+          getDocument: (options: { data: Uint8Array }) => {
+            promise: Promise<typeof pdfDocument>;
+            destroy: () => Promise<void>;
+          };
+        };
+        if (cancelled) return;
+        pdfJs.GlobalWorkerOptions.workerSrc = workerUrl;
+        loadingTask = pdfJs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) });
+        pdfDocument = await loadingTask.promise;
+        if (!pdfDocument || cancelled) return;
+
+        for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+          const page = await pdfDocument.getPage(pageNumber);
+          if (cancelled) return;
+          const baseViewport = page.getViewport({ scale: 1 });
+          const availableWidth = Math.max(280, container.clientWidth - 16);
+          const cssScale = availableWidth / baseViewport.width;
+          const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+          const viewport = page.getViewport({ scale: cssScale * outputScale });
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Canvas unavailable");
+          canvas.width = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          canvas.style.width = `${Math.floor(viewport.width / outputScale)}px`;
+          canvas.style.height = `${Math.floor(viewport.height / outputScale)}px`;
+          canvas.style.display = "block";
+          canvas.style.margin = pageNumber === 1 ? "8px auto" : "0 auto 8px";
+          canvas.style.background = "#ffffff";
+          canvas.style.boxShadow = "0 2px 12px rgba(20, 45, 41, 0.12)";
+          container.appendChild(canvas);
+          await page.render({ canvasContext: context, viewport }).promise;
+        }
+        if (!cancelled) setStatus("ready");
+      } catch {
+        if (!cancelled) setStatus("error");
+      }
+    };
+
+    void renderPdf();
+    return () => {
+      cancelled = true;
+      void loadingTask?.destroy();
+      void pdfDocument?.destroy();
+    };
+  }, [blob]);
+
+  return (
+    <div className="relative min-h-full">
+      {status === "loading" && <div className="absolute inset-x-0 top-8 z-10 text-center text-sm font-semibold text-[#64746f]">Preparando proposta…</div>}
+      {status === "error" && <div className="mx-auto mt-10 max-w-xs rounded-2xl bg-white p-5 text-center shadow-sm"><FileText size={28} className="mx-auto text-[var(--brand)]" /><p className="mt-3 font-bold">Não foi possível mostrar as páginas.</p><p className="mt-1 text-sm leading-5 text-[#74837f]">Use “Enviar” ou o botão de download no topo.</p></div>}
+      <div ref={containerRef} className={status === "ready" ? "py-1" : "min-h-[70vh]"} />
     </div>
   );
 }
