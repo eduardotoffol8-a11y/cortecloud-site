@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, Send, UsersRound } from "lucide-react";
+import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, PlayCircle, Send, UsersRound, Volume2 } from "lucide-react";
 import { InstallAppButton } from "@/components/install-app-button";
 import { LandingAnalytics } from "@/components/landing-analytics";
 import styles from "./presentation.module.css";
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 const assets = "/orcamovel/apresentacao";
+const demoVideoUrl = "https://drive.google.com/uc?export=download&id=1ck_V9DzEomhS-37jrTraAN7X1H-xDvYz";
 const customProjectUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20conheci%20seu%20trabalho%20pelo%20Or%C3%A7aM%C3%B3vel%20e%20gostaria%20de%20conversar%20sobre%20um%20site%20ou%20aplicativo%20personalizado%20para%20minha%20empresa.";
 const screenshots = [
   { file: "painel.jpg", title: "Seu negócio em uma tela", description: "Clientes, pendências e PDFs em uma visão geral." },
@@ -70,7 +71,7 @@ export default function MoveisPresentationPage() {
             <p className={styles.eyebrow}>ORÇAMENTOS PROFISSIONAIS PARA MARCENARIA</p>
             <h1>Organize seus orçamentos e apresente sua marcenaria <span>com mais profissionalismo.</span></h1>
             <p className={styles.lead}>Do primeiro atendimento ao envio da proposta: cadastre clientes, detalhe cada móvel, organize revisões e gere PDFs com a identidade da sua marcenaria — pelo celular ou computador.</p>
-            <div className={styles.actions}><TrialLink /><span className={styles.installCta}><InstallAppButton /></span><a href="#planos" data-track="plans_open" className={styles.textLink}>Comparar planos</a></div>
+            <div className={styles.actions}><TrialLink /><span className={styles.installCta}><InstallAppButton /></span><a href="#video" className={styles.textLink}>Ver demonstração com som</a></div>
             <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> Seus PDFs ficam arquivados</p>
           </div>
           <div className={styles.heroVisual}>
@@ -80,6 +81,32 @@ export default function MoveisPresentationPage() {
             </div>
             <div className={styles.pdfBadge}><FileText size={24} aria-hidden="true" /><span>Do orçamento ao PDF<small>Com a identidade da sua marcenaria</small></span></div>
             <span className={styles.realCapture}>Captura real do aplicativo</span>
+          </div>
+        </section>
+
+        <section id="video" className={styles.videoSection} aria-labelledby="video-title">
+          <div className={`${styles.container} ${styles.videoGrid}`}>
+            <div className={styles.videoCopy}>
+              <p className={styles.eyebrow}>VEJA O ORÇAMÓVEL EM AÇÃO</p>
+              <h2 id="video-title">Veja o fluxo real antes de começar.</h2>
+              <p className={styles.videoLead}>Assista à demonstração do OrçaMóvel com som e veja como a rotina sai do atendimento e chega a uma proposta organizada e profissional.</p>
+              <div className={styles.videoHighlights}>
+                <span><Check size={17} aria-hidden="true" />Cadastro e organização</span>
+                <span><Check size={17} aria-hidden="true" />Personalização da marcenaria</span>
+                <span><Check size={17} aria-hidden="true" />Orçamento e PDF profissional</span>
+              </div>
+              <div className={styles.videoActions}><TrialLink /><span><Volume2 size={17} aria-hidden="true" />Use o controle do player para ajustar o som</span></div>
+            </div>
+            <div className={styles.videoStage}>
+              <div className={styles.videoTopline}><PlayCircle size={18} aria-hidden="true" /><strong>Demonstração real</strong><span>02:07</span></div>
+              <div className={styles.videoPhoneFrame}>
+                <video className={styles.demoVideo} controls playsInline preload="metadata" poster={`${assets}/painel.jpg`} aria-label="Demonstração em vídeo do OrçaMóvel com som">
+                  <source src={demoVideoUrl} type="video/mp4" />
+                  Seu navegador não suporta reprodução de vídeo.
+                </video>
+              </div>
+              <p className={styles.videoHint}><Volume2 size={16} aria-hidden="true" />Toque em reproduzir para assistir com som.</p>
+            </div>
           </div>
         </section>
 
