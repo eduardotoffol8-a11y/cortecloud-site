@@ -25,7 +25,7 @@ export interface ClosingInfo {
 }
 
 export interface CompanyInfo {
-  name: string; tagline: string; document: string; contact: string; email: string; address: string; logo: string;
+  name: string; tagline?: string; document: string; contact: string; email: string; address: string; logo: string;
   primaryColor: string; secondaryColor: string;
 }
 
