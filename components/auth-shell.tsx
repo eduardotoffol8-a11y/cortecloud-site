@@ -17,7 +17,8 @@ function LoadingScreen({ product }: { product: "moveis" | "obra" }) {
 }
 
 function AuthScreen({ product }: { product: "moveis" | "obra" }) {
-  const productName = product === "obra" ? "OrçaObra" : "OrçaMóvel";
+  const obra = product === "obra";
+  const productName = obra ? "OrçaObra" : "OrçaMóvel";
   const supabase = getSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +29,7 @@ function AuthScreen({ product }: { product: "moveis" | "obra" }) {
   const signInWithGoogle = async () => {
     if (!supabase) return;
     setLoading("google"); setError("");
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } } });
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}${window.location.pathname}`, queryParams: { prompt: "select_account" } } });
     if (oauthError) { setError("Não foi possível iniciar o acesso com Google. Tente novamente."); setLoading(""); }
   };
 
@@ -56,10 +57,10 @@ function AuthScreen({ product }: { product: "moveis" | "obra" }) {
       <div className="fixed right-4 top-4 z-20"><InstallAppButton /></div>
       <div className="mx-auto w-full max-w-5xl lg:grid lg:grid-cols-[1.08fr_0.92fr] lg:items-stretch lg:gap-6">
         <aside className="hidden overflow-hidden rounded-[1.6rem] bg-[var(--brand-dark)] p-9 text-white shadow-[0_24px_70px_rgba(16,54,49,0.16)] lg:flex lg:flex-col lg:justify-between">
-          <div><div className="mb-10 w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wide text-[#d5ebe7]">PC · CELULAR · TABLET</div><h1 className="max-w-lg text-4xl font-extrabold leading-[1.08] tracking-[-0.05em]">O OrçaMóvel acompanha a sua marcenaria, da bancada ao escritório.</h1><p className="mt-5 max-w-lg text-base leading-7 text-[#c8e2de]">Use a mesma conta no computador e no celular. Seus clientes, orçamentos e PDFs continuam sincronizados.</p></div>
+          <div><div className="mb-10 w-fit rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold tracking-wide text-[#d5ebe7]">PC · CELULAR · TABLET</div><h1 className="max-w-lg text-4xl font-extrabold leading-[1.08] tracking-[-0.05em]">{obra ? "O OrçaObra organiza a sua construção, do levantamento à proposta." : "O OrçaMóvel acompanha a sua marcenaria, da bancada ao escritório."}</h1><p className="mt-5 max-w-lg text-base leading-7 text-[#c8e2de]">{obra ? "Use a mesma conta no computador e no celular. Clientes, obras, planilhas e PDFs ficam sincronizados." : "Use a mesma conta no computador e no celular. Seus clientes, orçamentos e PDFs continuam sincronizados."}</p></div>
           <div className="mt-10 grid gap-3">
-            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Monitor size={21}/><div><p className="font-bold">Trabalhe melhor no PC</p><p className="text-sm text-[#c8e2de]">Mais espaço para cadastros, propostas e arquivos.</p></div></div>
-            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Smartphone size={21}/><div><p className="font-bold">Continue no celular</p><p className="text-sm text-[#c8e2de]">Acesse a mesma conta quando estiver fora da marcenaria.</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Monitor size={21}/><div><p className="font-bold">Trabalhe melhor no PC</p><p className="text-sm text-[#c8e2de]">{obra ? "Mais espaço para planilhas, etapas e propostas." : "Mais espaço para cadastros, propostas e arquivos."}</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Smartphone size={21}/><div><p className="font-bold">Continue no celular</p><p className="text-sm text-[#c8e2de]">{obra ? "Acesse a obra e o orçamento mesmo no canteiro." : "Acesse a mesma conta quando estiver fora da marcenaria."}</p></div></div>
             <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><FileText size={21}/><div><p className="font-bold">PDFs profissionais</p><p className="text-sm text-[#c8e2de]">Sua identidade visual acompanha cada orçamento.</p></div></div>
           </div>
         </aside>
