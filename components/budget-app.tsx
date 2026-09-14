@@ -93,9 +93,23 @@ function companyTheme(company: CompanyInfo): React.CSSProperties {
 }
 
 function pdfBrandSignature(company: CompanyInfo) {
-  const primary = /^#[\da-f]{6}$/i.test(company.primaryColor) ? company.primaryColor : emptyCompany.primaryColor;
-  const secondary = /^#[\da-f]{6}$/i.test(company.secondaryColor) ? company.secondaryColor : emptyCompany.secondaryColor;
-  return `${primary.toLowerCase()}:${secondary.toLowerCase()}`;
+  const identity = JSON.stringify({
+    name: company.name.trim(),
+    tagline: (company.tagline || "").trim(),
+    document: company.document.trim(),
+    contact: company.contact.trim(),
+    email: company.email.trim(),
+    address: company.address.trim(),
+    logo: company.logo,
+    primaryColor: company.primaryColor.toLowerCase(),
+    secondaryColor: company.secondaryColor.toLowerCase(),
+  });
+  let hash = 2166136261;
+  for (let index = 0; index < identity.length; index += 1) {
+    hash ^= identity.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `brand-v2-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 function normalizeQuote(input: Quote): Quote {
@@ -203,13 +217,13 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
       if (supabase) {
         const [companyResult, clientsResult, quotesResult, attachmentsResult] = await Promise.all([
-          supabase.from("company_profiles").select("name,document,contact,email,address,logo_data,primary_color,secondary_color").eq("user_id", userId).maybeSingle(),
+          supabase.from("company_profiles").select("name,tagline,document,contact,email,address,logo_data,primary_color,secondary_color").eq("user_id", userId).maybeSingle(),
           supabase.from("clients").select("id,name,phone,email,document,address,created_at,updated_at").eq("user_id", userId).order("updated_at", { ascending: false }),
           supabase.from("quotes").select("payload,pdf_generated_at").eq("user_id", userId).order("updated_at", { ascending: false }),
           supabase.from("project_attachments").select("id,quote_id,file_name,storage_path,mime_type,size_bytes,created_at,include_in_pdf").eq("user_id", userId).order("created_at", { ascending: false }),
         ]);
         if (companyResult.data?.name) {
-          nextCompany = { name: companyResult.data.name, document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "", primaryColor: companyResult.data.primary_color || emptyCompany.primaryColor, secondaryColor: companyResult.data.secondary_color || emptyCompany.secondaryColor };
+          nextCompany = { name: companyResult.data.name, tagline: companyResult.data.tagline || "", document: companyResult.data.document || "", contact: companyResult.data.contact || "", email: companyResult.data.email || "", address: companyResult.data.address || "", logo: companyResult.data.logo_data || "", primaryColor: companyResult.data.primary_color || emptyCompany.primaryColor, secondaryColor: companyResult.data.secondary_color || emptyCompany.secondaryColor };
           needsOnboarding = false;
         }
         if (clientsResult.data) {
@@ -307,7 +321,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       try {
         await Promise.all(clients.map(persistClient));
         await Promise.all(history.map(persistQuote));
-        await supabase.from("company_profiles").upsert({ user_id: userId, name: company.name, document: company.document, contact: company.contact, email: company.email, address: company.address, logo_data: company.logo, primary_color: company.primaryColor, secondary_color: company.secondaryColor, updated_at: new Date().toISOString() });
+        await supabase.from("company_profiles").upsert({ user_id: userId, name: company.name, tagline: (company.tagline || "").trim(), document: company.document, contact: company.contact, email: company.email, address: company.address, logo_data: company.logo, primary_color: company.primaryColor, secondary_color: company.secondaryColor, updated_at: new Date().toISOString() });
         setNotice("Dados offline sincronizados.");
       } catch { setNotice("Ainda não foi possível sincronizar. Seus dados continuam salvos neste aparelho."); }
     };
@@ -459,7 +473,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
         if (quote.id === refreshed.id) setQuote(refreshed);
       }
       downloadBlob(generated.blob, generated.fileName);
-      setNotice(needsBrandRefresh ? "PDF atualizado com a nova paleta e arquivado." : "Download iniciado.");
+      setNotice(needsBrandRefresh ? "PDF atualizado com a identidade visual atual e arquivado." : "Download iniciado.");
     } catch {
       setNotice("Não foi possível baixar este PDF.");
     }
@@ -584,7 +598,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     try {
       if (navigator.onLine && supabase) {
         const { error } = await supabase.from("company_profiles").upsert({
-          user_id: userId, name: company.name.trim(), document: company.document, contact: company.contact,
+          user_id: userId, name: company.name.trim(), tagline: (company.tagline || "").trim(), document: company.document, contact: company.contact,
           email: company.email, address: company.address, logo_data: company.logo, primary_color: company.primaryColor,
           secondary_color: company.secondaryColor, updated_at: new Date().toISOString(),
         });
