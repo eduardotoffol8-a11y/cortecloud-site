@@ -5,6 +5,7 @@ import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palett
 import { InstallAppButton } from "@/components/install-app-button";
 import { LandingAnalytics } from "@/components/landing-analytics";
 import styles from "./presentation.module.css";
+import videoStyles from "./video.module.css";
 
 export const metadata: Metadata = {
   title: "OrçaMóvel | Orçamentos profissionais no celular e computador",
@@ -84,28 +85,28 @@ export default function MoveisPresentationPage() {
           </div>
         </section>
 
-        <section id="video" className={styles.videoSection} aria-labelledby="video-title">
-          <div className={`${styles.container} ${styles.videoGrid}`}>
-            <div className={styles.videoCopy}>
+        <section id="video" className={videoStyles.videoSection} aria-labelledby="video-title">
+          <div className={`${styles.container} ${videoStyles.videoGrid}`}>
+            <div className={videoStyles.videoCopy}>
               <p className={styles.eyebrow}>VEJA O ORÇAMÓVEL EM AÇÃO</p>
               <h2 id="video-title">Veja o fluxo real antes de começar.</h2>
-              <p className={styles.videoLead}>Assista à demonstração do OrçaMóvel com som e veja como a rotina sai do atendimento e chega a uma proposta organizada e profissional.</p>
-              <div className={styles.videoHighlights}>
+              <p className={videoStyles.videoLead}>Assista à demonstração do OrçaMóvel com som e veja como a rotina sai do atendimento e chega a uma proposta organizada e profissional.</p>
+              <div className={videoStyles.videoHighlights}>
                 <span><Check size={17} aria-hidden="true" />Cadastro e organização</span>
                 <span><Check size={17} aria-hidden="true" />Personalização da marcenaria</span>
                 <span><Check size={17} aria-hidden="true" />Orçamento e PDF profissional</span>
               </div>
-              <div className={styles.videoActions}><TrialLink /><span><Volume2 size={17} aria-hidden="true" />Use o controle do player para ajustar o som</span></div>
+              <div className={videoStyles.videoActions}><TrialLink /><span><Volume2 size={17} aria-hidden="true" />Use o controle do player para ajustar o som</span></div>
             </div>
-            <div className={styles.videoStage}>
-              <div className={styles.videoTopline}><PlayCircle size={18} aria-hidden="true" /><strong>Demonstração real</strong><span>02:07</span></div>
-              <div className={styles.videoPhoneFrame}>
-                <video className={styles.demoVideo} controls playsInline preload="metadata" poster={`${assets}/painel.jpg`} aria-label="Demonstração em vídeo do OrçaMóvel com som">
+            <div className={videoStyles.videoStage}>
+              <div className={videoStyles.videoTopline}><PlayCircle size={18} aria-hidden="true" /><strong>Demonstração real</strong><span>02:07</span></div>
+              <div className={videoStyles.videoPhoneFrame}>
+                <video className={videoStyles.demoVideo} controls playsInline preload="metadata" poster={`${assets}/painel.jpg`} aria-label="Demonstração em vídeo do OrçaMóvel com som">
                   <source src={demoVideoUrl} type="video/mp4" />
                   Seu navegador não suporta reprodução de vídeo.
                 </video>
               </div>
-              <p className={styles.videoHint}><Volume2 size={16} aria-hidden="true" />Toque em reproduzir para assistir com som.</p>
+              <p className={videoStyles.videoHint}><Volume2 size={16} aria-hidden="true" />Toque em reproduzir para assistir com som.</p>
             </div>
           </div>
         </section>
