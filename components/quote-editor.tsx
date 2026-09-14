@@ -8,6 +8,25 @@ import { useMemo, useRef, useState } from "react";
 import type { ClientInfo, FurnitureItem, ProjectAttachment, Quote } from "@/lib/types";
 import { brl, emptyFurniture, quoteSubtotal, quoteTotal, statusLabel } from "@/lib/quote";
 
+const paymentMethodOptions = [
+  "PIX ou transferência",
+  "Cartão de crédito",
+  "Boleto bancário",
+  "Dinheiro",
+  "Financiamento",
+] as const;
+
+const paymentMethodSeparator = " • ";
+
+function parsePaymentMethods(value: string) {
+  const selected = value
+    .split(/\s*[•|;]\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const valid = paymentMethodOptions.filter((option) => selected.includes(option));
+  return valid.length ? valid : [paymentMethodOptions[0]];
+}
+
 function Field({ label, className = "", children }: { label: string; className?: string; children: React.ReactNode }) {
   return <label className={className}><span className="field-label">{label}</span>{children}</label>;
 }
@@ -62,10 +81,19 @@ export function QuoteEditor({
   const fileInput = useRef<HTMLInputElement>(null);
   const subtotal = useMemo(() => quoteSubtotal(quote), [quote]);
   const total = useMemo(() => quoteTotal(quote), [quote]);
+  const selectedPaymentMethods = useMemo(() => parsePaymentMethods(quote.closing.paymentMethod), [quote.closing.paymentMethod]);
 
   const updateClient = (field: keyof ClientInfo, value: string) => onChange({ ...quote, client: { ...quote.client, [field]: value } });
   const updateFurniture = (id: string, field: keyof FurnitureItem, value: string | number | boolean) => onChange({ ...quote, furniture: quote.furniture.map((item) => item.id === id ? { ...item, [field]: value } : item) });
   const updateClosing = (field: keyof Quote["closing"], value: string | boolean) => onChange({ ...quote, closing: { ...quote.closing, [field]: value } });
+  const togglePaymentMethod = (method: typeof paymentMethodOptions[number]) => {
+    const isSelected = selectedPaymentMethods.includes(method);
+    if (isSelected && selectedPaymentMethods.length === 1) return;
+    const next = isSelected
+      ? selectedPaymentMethods.filter((item) => item !== method)
+      : paymentMethodOptions.filter((option) => selectedPaymentMethods.includes(option) || option === method);
+    updateClosing("paymentMethod", next.join(paymentMethodSeparator));
+  };
 
   const addFurniture = () => onChange({ ...quote, furniture: [...quote.furniture, emptyFurniture()] });
   const duplicateFurniture = (item: FurnitureItem) => onChange({ ...quote, furniture: [...quote.furniture, { ...item, id: emptyFurniture().id, name: item.name ? `${item.name} — cópia` : "" }] });
@@ -156,7 +184,25 @@ export function QuoteEditor({
         <div className="app-card p-4 sm:p-6">
           <h2 className="mb-5 flex items-center gap-2 font-bold"><CircleDollarSign size={19} className="text-[var(--brand)]" />Condições comerciais</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Método de pagamento"><select className="field-input" value={quote.closing.paymentMethod} onChange={(event) => updateClosing("paymentMethod", event.target.value)}><option>PIX ou transferência</option><option>Cartão de crédito</option><option>Boleto bancário</option><option>Dinheiro</option><option>Financiamento</option></select></Field>
+            <div className="md:col-span-2">
+              <span className="field-label">Métodos de pagamento</span>
+              <p className="mb-3 -mt-1 text-xs leading-5 text-[#71817d]">Selecione uma ou mais opções que serão oferecidas ao cliente.</p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {paymentMethodOptions.map((method) => {
+                  const selected = selectedPaymentMethods.includes(method);
+                  const onlySelected = selected && selectedPaymentMethods.length === 1;
+                  return (
+                    <label key={method} className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm font-bold transition-all ${selected ? "border-[var(--brand-border)] bg-[var(--brand-soft)] text-[var(--brand)] shadow-sm" : "border-[#dce5e2] bg-white text-[#566661] hover:border-[#b8c9c5]"}`}>
+                      <input type="checkbox" className="sr-only" checked={selected} onChange={() => togglePaymentMethod(method)} aria-label={`${selected ? "Remover" : "Adicionar"} ${method}`} />
+                      <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${selected ? "border-[var(--brand)] bg-[var(--brand)] text-white" : "border-[#bdcbc8] bg-white"}`}>{selected && <Check size={13} strokeWidth={3} />}</span>
+                      <span className="min-w-0 flex-1">{method}</span>
+                      {onlySelected && <span className="sr-only">Mantenha ao menos uma forma de pagamento selecionada.</span>}
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs font-semibold text-[#7b8b87]">{selectedPaymentMethods.length} {selectedPaymentMethods.length === 1 ? "opção selecionada" : "opções selecionadas"}</p>
+            </div>
             <Field label="Condição de pagamento"><input className="field-input" value={quote.closing.paymentTerms} onChange={(event) => updateClosing("paymentTerms", event.target.value)} placeholder="Ex.: 50% entrada e 50% entrega" /></Field>
             <Field label="Prazo de entrega"><input className="field-input" value={quote.closing.deliveryTime} onChange={(event) => updateClosing("deliveryTime", event.target.value)} /></Field>
             <Field label="Validade do orçamento"><div className="relative"><input className="field-input !pr-14" value={quote.closing.validityDays} onChange={(event) => updateClosing("validityDays", event.target.value)} inputMode="numeric" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#71817d]">dias</span></div></Field>
