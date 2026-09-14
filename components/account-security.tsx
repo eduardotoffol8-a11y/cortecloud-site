@@ -96,19 +96,19 @@ export function AccountSecurity({ email, onSignOut, onOpenPlans }: { email: stri
 
   return (
     <div className="mt-4 space-y-3">
-      <section className="app-card p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="overflow-hidden rounded-[1.35rem] border border-[#efc28c] bg-[linear-gradient(135deg,#fffaf3,#fff2e3)] shadow-[0_14px_34px_rgba(177,85,24,0.09)]">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]"><BadgeDollarSign size={22} /></span>
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#ffe1bf] text-[#c45116] shadow-sm"><BadgeDollarSign size={22} /></span>
             <div>
-              <h2 className="font-bold">Plano do OrçaMóvel</h2>
-              <p className="mt-1 text-sm font-semibold leading-5 text-[#315d57]">{planLabel(profile)}</p>
-              <p className="mt-1 text-xs leading-5 text-[#71817d]">Pagamentos avulsos por período. Não há renovação automática.</p>
+              <div className="flex flex-wrap items-center gap-2"><h2 className="font-extrabold text-[#3f2a1d]">Plano do OrçaMóvel</h2><span className="rounded-full bg-[#fff0d7] px-2.5 py-1 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#a44b16]">Acesso</span></div>
+              <p className="mt-1 text-sm font-bold leading-5 text-[#8a4219]">{planLabel(profile)}</p>
+              <p className="mt-1 text-xs leading-5 text-[#7d6a5e]">Pagamentos avulsos por período. Não há renovação automática.</p>
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
-            <button type="button" onClick={() => void refreshPlan()} disabled={refreshingPlan} className="quiet-button !px-3"><RefreshCw className={refreshingPlan ? "animate-spin" : ""} size={16} />Atualizar</button>
-            <button type="button" onClick={onOpenPlans} className="primary-button"><BadgeDollarSign size={17} />{hasPaidPlan ? "Ver upgrades" : "Ver planos"}</button>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={() => void refreshPlan()} disabled={refreshingPlan} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#e4c6aa] bg-white px-4 text-sm font-bold text-[#6f5a4b] transition-colors hover:bg-[#fff9f3]"><RefreshCw className={refreshingPlan ? "animate-spin" : ""} size={16} />Atualizar</button>
+            <button type="button" onClick={onOpenPlans} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d94f13] bg-[#e85c1e] px-4 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(232,92,30,0.24)] transition-colors hover:bg-[#cc4712]"><BadgeDollarSign size={17} />{hasPaidPlan ? "Ver upgrades" : "Ver planos"}</button>
           </div>
         </div>
       </section>
