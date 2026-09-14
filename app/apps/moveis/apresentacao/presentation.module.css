@@ -172,3 +172,26 @@
   .footer { flex-direction: column; gap: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .page * { transition: none !important; } }
+
+.headerInstall { display: inline-flex; }
+.installCta { display: inline-flex; }
+.installCta :global(.install-pill), .headerInstall :global(.install-pill) {
+  min-height: 46px; border: 1px solid #b8ccc5; border-radius: 10px; padding: 10px 15px;
+  background: white; color: var(--green); display: inline-flex; align-items: center; gap: 8px; font-weight: 750;
+}
+.installCta :global(.install-pill):hover, .headerInstall :global(.install-pill):hover { background: var(--soft); }
+.useCases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 34px; }
+.useCases article { border: 1px solid #dce6e1; border-radius: 16px; background: white; padding: 24px; }
+.useCases span { display: block; color: #9a7a3d; font-size: .75rem; font-weight: 800; margin-bottom: 20px; }
+.useCases p { color: #64766d; font-size: .92rem; margin-top: 10px; }
+.finalActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.finalCta .installCta :global(.install-pill) { background: transparent; border-color: #91b4aa; color: white; }
+@media (max-width: 900px) {
+  .headerInstall { display: none; }
+  .useCases { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .useCases { grid-template-columns: 1fr; }
+  .actions .installCta { width: 100%; }
+  .actions .installCta :global(.install-pill) { width: 100%; justify-content: center; }
+}
