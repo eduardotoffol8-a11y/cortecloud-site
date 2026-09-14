@@ -1,7 +1,7 @@
 "use client";
 
 import { Building2, Download, MonitorDown, MoreVertical, Share2, Sparkles, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { prepareCompanyInstallIcon, useDefaultInstallIcon } from "@/lib/pwa-icon";
 
 interface InstallPromptEvent extends Event {
@@ -15,20 +15,11 @@ function runningStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
 }
 
-function detectDevice() {
-  if (typeof navigator === "undefined") return "desktop" as const;
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/i.test(ua)) return "ios" as const;
-  if (/Android/i.test(ua)) return "android" as const;
-  return "desktop" as const;
-}
-
 export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyLogo?: string; onRequestLogo?: () => void }) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [showLogoChoice, setShowLogoChoice] = useState(false);
-  const device = useMemo(() => detectDevice(), []);
 
   useEffect(() => {
     // Register here as well so the app is installable even before login.
@@ -97,7 +88,7 @@ export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyL
     <>
       <button onClick={() => void install()} className="install-pill" aria-label="Instalar OrçaMóvel neste dispositivo">
         <Download size={15} />
-        <span>{device === "desktop" ? "Instalar no PC" : "Instalar app"}</span>
+        <span>Instalar o app</span>
       </button>
       {showLogoChoice && (
         <div className="fixed inset-0 z-[70] grid place-items-end bg-[#102521]/35 p-4 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="logo-choice-title">
