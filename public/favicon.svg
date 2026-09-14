@@ -1,8 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-  <rect width="48" height="48" rx="11" fill="#0C4D46"/>
-  <circle cx="24" cy="24" r="15.5" fill="#F8F5EE"/>
-  <circle cx="24" cy="24" r="10" fill="#0C4D46"/>
-  <rect x="23.3" y="14" width="1.6" height="20" rx=".8" fill="#F8F5EE"/>
-  <rect x="17.2" y="20.5" width="1.9" height="7" rx=".95" fill="#F8F5EE"/>
-  <g fill="#B5914E"><rect x="27" y="17" width="5" height="1.6"/><rect x="27" y="21" width="3" height="1.6"/><rect x="27" y="25" width="5" height="1.6"/><rect x="27" y="29" width="3" height="1.6"/></g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><image href="/pwa-company-icon-512.png?v=official-20260914" width="512" height="512" preserveAspectRatio="xMidYMid slice"/></svg>

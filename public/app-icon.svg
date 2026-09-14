@@ -1,14 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OrçaMóvel">
-  <rect width="512" height="512" rx="112" fill="#0C4D46"/>
-  <circle cx="256" cy="256" r="164" fill="#F8F5EE"/>
-  <circle cx="256" cy="256" r="108" fill="#0C4D46"/>
-  <rect x="248" y="148" width="16" height="216" rx="8" fill="#F8F5EE"/>
-  <rect x="181" y="216" width="20" height="80" rx="10" fill="#F8F5EE"/>
-  <g fill="#B5914E">
-    <rect x="287" y="178" width="50" height="14" rx="3"/>
-    <rect x="287" y="217" width="29" height="14" rx="3"/>
-    <rect x="287" y="256" width="54" height="14" rx="3"/>
-    <rect x="287" y="295" width="29" height="14" rx="3"/>
-    <rect x="287" y="334" width="50" height="14" rx="3"/>
-  </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><image href="/pwa-company-icon-512.png?v=official-20260914" width="512" height="512" preserveAspectRatio="xMidYMid slice"/></svg>

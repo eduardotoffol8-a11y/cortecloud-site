@@ -1,4 +1,4 @@
-const CACHE = "orcamovel-v7";
+const CACHE = "orcamovel-v8";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v1";
 const CORE = ["/", "/apps/moveis", "/manifest.webmanifest", "/app-icon.svg", "/pwa-company-icon-192.png", "/pwa-company-icon-512.png"];
 
