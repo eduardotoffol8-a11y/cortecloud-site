@@ -8,14 +8,13 @@ export interface PdfProjectDocument { name: string; bytes: ArrayBuffer; }
 
 const itemDetails = (item: FurnitureItem) => {
   const details: string[] = [];
-  if (item.frontColor) details.push(`Frentes: ${item.frontColor}`);
-  if (item.handle) details.push(`Puxador: ${item.handle}`);
+
   if (item.mirror) details.push("Espelho");
   if (item.glass) details.push("Vidro");
   if (item.aluminum) details.push("Perfil de alumínio");
   if (item.led) details.push("Iluminação LED");
   if (item.extras) details.push(item.extras);
-  return details.join(" | ") || "Sem ferragens ou adicionais especificados";
+  return details.join(" | ") || "Sem adicionais especificados";
 };
 
 const imageFormat = (dataUrl: string) => {
@@ -53,7 +52,8 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     doc.setCharSpace(0);
   };
 
-  const sectionTitle = (label: string) => {
+  const sectionTitle = (label: string, followingSpace = 8) => {
+    ensureSpace(8 + followingSpace);
     doc.setFillColor(...gold);
     doc.roundedRect(margin, y - 2.7, 1.8, 6.2, 0.8, 0.8, "F");
     textStyle(emerald, 9.8, "bold");
@@ -116,7 +116,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const validUntil = new Date(quote.createdAt);
   validUntil.setDate(validUntil.getDate() + Number(quote.closing.validityDays || 15));
   const controls: Array<[string, string]> = [
-    ["NÚMERO DO ORÇAMENTO", quote.number],
+    ["ORÇAMENTO / REVISÃO", `${quote.number}  •  REV. ${String(quote.revision || 1).padStart(2, "0")}`],
     ["DATA DE EMISSÃO", new Date(quote.createdAt).toLocaleDateString("pt-BR")],
     ["VÁLIDO ATÉ", validUntil.toLocaleDateString("pt-BR")],
   ];
@@ -159,26 +159,72 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, 13.5, 2.2, 2.2, "FD");
   textStyle(muted, 7.3, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 5);
   textStyle(emerald, 10.2, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 10.8);
-  y += 22; sectionTitle("Móveis e especificações");
+  y += 22;
+
+  const projectDescription = quote.closing.projectDescription?.trim();
+  if (projectDescription) {
+    const descriptionLines = doc.splitTextToSize(projectDescription, contentWidth - 12) as string[];
+    sectionTitle("Apresentação do projeto", descriptionLines.length * 4.8 + 9);
+    doc.setFillColor(252, 253, 253); doc.setDrawColor(...line);
+    const descriptionHeight = descriptionLines.length * 4.8 + 8;
+    doc.roundedRect(margin, y, contentWidth, descriptionHeight, 2.3, 2.3, "FD");
+    textStyle(ink, 9.7); doc.text(descriptionLines, margin + 5, y + 6);
+    y += descriptionHeight + 7;
+  }
+
+  sectionTitle("Resumo comercial", 21);
+  const commercialSummary: Array<[string, string]> = [
+    ["VALOR TOTAL", brl(quoteTotal(quote))],
+    ["PRAZO", quote.closing.deliveryTime || "A definir"],
+    ["PAGAMENTO", quote.closing.paymentTerms || quote.closing.paymentMethod || "A definir"],
+    ["ITENS", `${quote.furniture.reduce((sum, item) => sum + Math.max(1, item.quantity || 1), 0)} unidade(s)`],
+  ];
+  const summaryGap = 2.2, summaryWidth = (contentWidth - summaryGap * 3) / 4;
+  commercialSummary.forEach(([label, value], index) => {
+    const x = margin + index * (summaryWidth + summaryGap);
+    doc.setFillColor(index === 0 ? emerald[0] : mist[0], index === 0 ? emerald[1] : mist[1], index === 0 ? emerald[2] : mist[2]);
+    doc.setDrawColor(...line); doc.roundedRect(x, y, summaryWidth, 19, 2.2, 2.2, index === 0 ? "F" : "FD");
+    textStyle(index === 0 ? [218, 235, 231] : muted, 7.1, "bold"); doc.text(label, x + 3.5, y + 5.6);
+    const valueLines = (doc.splitTextToSize(value, summaryWidth - 7) as string[]).slice(0, 2);
+    textStyle(index === 0 ? [255, 255, 255] : ink, index === 0 ? 10.5 : 8.7, "bold"); doc.text(valueLines, x + 3.5, y + 12);
+  });
+  y += 27;
+  sectionTitle("Móveis e especificações", 46);
 
   quote.furniture.forEach((item, index) => {
-    const specs = `${item.width || "-"} L x ${item.height || "-"} A x ${item.depth || "-"} P mm  |  MDF ${item.mdfThickness || "-"} mm  |  ${item.mdfColor || "Cor não informada"}`;
-    const specLines = doc.splitTextToSize(specs, contentWidth - 18) as string[];
-    const detailLines = doc.splitTextToSize(itemDetails(item), contentWidth - 18) as string[];
-    const rowHeight = Math.max(31.5, 19.5 + specLines.length * 4.8 + detailLines.length * 4.8);
+    const dimensions = `${item.width || "-"} L × ${item.height || "-"} A × ${item.depth || "-"} P mm`;
+    const material = `MDF ${item.mdfThickness || "-"} mm · ${item.mdfColor || "Cor não informada"}`;
+    const finish = [item.frontColor && `Frentes: ${item.frontColor}`, item.handle && `Puxador: ${item.handle}`].filter(Boolean).join(" · ") || "Conforme especificação";
+    const technicalValues = [dimensions, material, finish].map((value) => (doc.splitTextToSize(value, 50) as string[]).slice(0, 2));
+    const maxTechnicalLines = Math.max(...technicalValues.map((lines) => lines.length));
+    const detailLines = doc.splitTextToSize(itemDetails(item), contentWidth - 12) as string[];
+    const technicalHeight = Math.max(17, 9 + maxTechnicalLines * 4);
+    const rowHeight = 18 + technicalHeight + Math.max(10, detailLines.length * 4.6 + 5);
     ensureSpace(rowHeight + 5);
     doc.setDrawColor(...line); doc.setLineWidth(0.25); doc.setFillColor(252, 253, 253);
     doc.roundedRect(margin, y, contentWidth, rowHeight, 2.4, 2.4, "FD");
     doc.setFillColor(...emerald); doc.roundedRect(margin + 4, y + 5, 10.5, 8.5, 2, 2, "F");
     textStyle([255, 255, 255], 8.4, "bold"); doc.text(String(index + 1).padStart(2, "0"), margin + 9.25, y + 10.8, { align: "center" });
-    textStyle(ink, 11.7, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} - ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 11);
+    textStyle(ink, 11.7, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} — ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 11);
     textStyle(muted, 9.2); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - (quote.closing.showItemPrices !== false ? 47 : 4), y + 11, { align: "right" });
     if (quote.closing.showItemPrices !== false) {
       textStyle(emerald, 11.7, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 11, { align: "right" });
     }
-    let rowY = y + 18.5;
-    textStyle(muted, 9.7); doc.text(specLines, margin + 5, rowY); rowY += specLines.length * 4.8 + 2.2;
-    textStyle(ink, 9.5); doc.text(detailLines, margin + 5, rowY);
+
+    const technicalY = y + 16;
+    doc.setFillColor(...mist); doc.roundedRect(margin + 4, technicalY, contentWidth - 8, technicalHeight, 1.7, 1.7, "F");
+    const technicalLabels = ["DIMENSÕES", "MATERIAL", "FRENTES E PUXADOR"];
+    const technicalColumnWidth = (contentWidth - 14) / 3;
+    technicalValues.forEach((lines, technicalIndex) => {
+      const x = margin + 6 + technicalIndex * technicalColumnWidth;
+      if (technicalIndex > 0) { doc.setDrawColor(...line); doc.line(x - 2, technicalY + 3, x - 2, technicalY + technicalHeight - 3); }
+      textStyle(emerald, 7.2, "bold"); doc.text(technicalLabels[technicalIndex], x, technicalY + 5);
+      textStyle(ink, 8.9); doc.text(lines, x, technicalY + 10.5);
+    });
+
+    const detailY = technicalY + technicalHeight + 5;
+    textStyle(muted, 7.2, "bold"); doc.text("ADICIONAIS E OBSERVAÇÕES", margin + 5, detailY);
+    textStyle(ink, 9.2); doc.text(detailLines, margin + 5, detailY + 5);
     y += rowHeight + 5;
   });
 
@@ -283,7 +329,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const quotePages = doc.getNumberOfPages();
   for (let page = 1; page <= quotePages; page += 1) {
     doc.setPage(page); doc.setDrawColor(...line); doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14);
-    textStyle([112, 126, 122], 8); doc.text(`${company.name || "Orçamento profissional"} | ${quote.number}`, margin, pageHeight - 8);
+    textStyle([112, 126, 122], 8); doc.text(`${company.name || "Orçamento profissional"} | ${quote.number} | Rev. ${String(quote.revision || 1).padStart(2, "0")}`, margin, pageHeight - 8);
     doc.text(`Página ${page} de ${quotePages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
   }
 
