@@ -108,6 +108,12 @@
 .faq summary span { color: #578364; font-size: 1.5rem; font-weight: 400; }
 .faq details[open] summary span { transform: rotate(45deg); }
 .faq details p { color: #637668; padding-bottom: 22px; }
+.customProject { margin-bottom: 90px; padding: 42px; border: 1px solid #d5e2de; border-radius: 22px; background: linear-gradient(135deg, #f4f8f6, #fffaf1); display: grid; grid-template-columns: 1.25fr .75fr; align-items: center; gap: 55px; }
+.customProject h2 { max-width: 650px; }
+.customProject > div > p:not(.eyebrow) { margin-top: 16px; max-width: 650px; color: #62736d; }
+.customContact { display: flex; flex-direction: column; align-items: flex-start; gap: 15px; }
+.customContact span { color: #6d7b77; font-size: .8rem; line-height: 1.7; }
+.customContact span a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
 .finalCta { background: #0c463d; color: white; text-align: center; padding-block: 76px; }
 .finalCta .eyebrow { color: #adcaba; }
 .finalCta h2 { font-size: clamp(2rem, 4vw, 3.4rem); }
@@ -160,6 +166,8 @@
   .plans article { padding: 26px; }
   .plans .button, .plans .outlineButton { width: 100%; }
   .faq { grid-template-columns: 1fr; gap: 22px; padding-block: 0 56px; }
+  .customProject { grid-template-columns: 1fr; gap: 28px; margin-bottom: 56px; padding: 28px 24px; }
+  .customContact, .customContact .button { width: 100%; }
   .finalCta { padding-block: 52px; }
   .footer { flex-direction: column; gap: 12px; }
 }
