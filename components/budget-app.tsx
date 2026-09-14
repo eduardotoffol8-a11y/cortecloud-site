@@ -2,7 +2,7 @@
 
 import {
   BadgeCheck, Check, ChevronLeft, ChevronRight, Download, FileClock, FilePlus2, FileText,
-  Eye, FileImage, Folder, FolderOpen, Home, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Share2, Trash2, X,
+  Eye, FileImage, Folder, FolderOpen, Home, Mail, MoreHorizontal, Paperclip, PencilLine, Plus, Search, Settings, Share2, Star, Trash2, X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
@@ -187,11 +187,70 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [quoteStartMode, setQuoteStartMode] = useState<"choose" | "existing" | null>(null);
   const [quoteClientSearch, setQuoteClientSearch] = useState("");
   const [calculatorEnabled, setCalculatorEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("orcamovel.floating-calculator.v1") !== "false");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackName, setFeedbackName] = useState("");
+  const [feedbackText, setFeedbackText] = useState("");
 
   const changeCalculatorPreference = (enabled: boolean) => {
     setCalculatorEnabled(enabled);
     localStorage.setItem("orcamovel.floating-calculator.v1", String(enabled));
     setNotice(enabled ? "Calculadora flutuante ativada." : "Calculadora flutuante ocultada.");
+  };
+
+  const shareOrcaMovel = async () => {
+    const url = window.location.origin;
+    const shareData = {
+      title: "OrçaMóvel",
+      text: "Conheça o OrçaMóvel: orçamentos profissionais para marcenaria, direto no celular ou computador.",
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      await navigator.clipboard.writeText(`${shareData.text} ${url}`);
+      setNotice("Link do OrçaMóvel copiado. Agora é só enviar ao seu amigo.");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setNotice("Não foi possível compartilhar agora.");
+    }
+  };
+
+  const feedbackMessage = () => [
+    "Avaliação do OrçaMóvel",
+    "",
+    `Nota: ${feedbackRating} de 5`,
+    `Nome: ${feedbackName.trim() || "Não informado"}`,
+    `Conta: ${userEmail}`,
+    "",
+    feedbackText.trim(),
+  ].join("\n");
+
+  const sendFeedback = () => {
+    if (!feedbackText.trim()) {
+      setNotice("Escreva um comentário antes de enviar.");
+      return;
+    }
+    const subject = encodeURIComponent(`Avaliação OrçaMóvel — ${feedbackRating}/5`);
+    const body = encodeURIComponent(feedbackMessage());
+    window.location.href = `mailto:eduardo.toffol8@gmail.com?subject=${subject}&body=${body}`;
+    setFeedbackOpen(false);
+    setNotice("Avaliação preparada. Confirme o envio no seu aplicativo de e-mail.");
+  };
+
+  const copyFeedback = async () => {
+    if (!feedbackText.trim()) {
+      setNotice("Escreva um comentário antes de copiar.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(feedbackMessage());
+      setNotice("Avaliação copiada.");
+    } catch {
+      setNotice("Não foi possível copiar a avaliação.");
+    }
   };
 
   useEffect(() => {
@@ -756,6 +815,20 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
       <AccountSecurity email={userEmail} onSignOut={onSignOut} onOpenPlans={() => setShowPlans(true)} />
       <div className="app-card mt-5 flex items-center justify-between gap-4 p-4 sm:p-5"><div><p className="font-bold text-[#172321]">Calculadora flutuante</p><p className="mt-1 text-sm leading-5 text-[#74837f]">Deixe a calculadora disponível sobre as telas do aplicativo.</p></div><label className="relative inline-flex shrink-0 cursor-pointer items-center"><input type="checkbox" className="peer sr-only" checked={calculatorEnabled} onChange={(event) => changeCalculatorPreference(event.target.checked)} /><span className="h-7 w-12 rounded-full bg-[#cbd6d3] transition-colors peer-checked:bg-[var(--brand)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--brand)] after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5" /></label></div>
+      <div className="mt-5 overflow-hidden rounded-2xl border border-[#dfc98e] bg-gradient-to-br from-[#fffaf0] via-[#fffdf8] to-[#f4ead1] p-5 shadow-sm sm:p-6">
+        <div className="flex items-start gap-4">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#b5914e] text-white shadow-sm"><Share2 size={22} /></span>
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#8a692c]">Ajude o OrçaMóvel a crescer</p>
+            <h2 className="mt-1 text-xl font-extrabold tracking-[-0.025em] text-[#2d291f]">Gostou? Indique para um amigo</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#716650]">Compartilhe o OrçaMóvel com outro marceneiro ou conte como o aplicativo está ajudando no seu trabalho.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={() => void shareOrcaMovel()} className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#0c4d46] px-4 text-sm font-extrabold text-white shadow-sm transition-transform hover:-translate-y-0.5"><Share2 size={18} />Indicar para um amigo</button>
+          <button type="button" onClick={() => setFeedbackOpen(true)} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#cbae69] bg-white px-4 text-sm font-extrabold text-[#60491f] transition-colors hover:bg-[#fff8e9]"><Star size={18} fill="currentColor" />Deixe sua avaliação</button>
+        </div>
+      </div>
     </section>
   );
 
@@ -792,6 +865,24 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? quoteStartMode ? <QuoteClientPicker mode={quoteStartMode} clients={quoteClients} search={quoteClientSearch} onSearch={setQuoteClientSearch} onChooseExisting={() => setQuoteStartMode("existing")} onChooseNew={() => beginQuoteForClient()} onSelect={(client) => beginQuoteForClient(client)} onBack={() => quoteStartMode === "existing" ? (setQuoteClientSearch(""), setQuoteStartMode("choose")) : (setQuoteStartMode(null), setView("dashboard"))} /> : <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setClientDraft(null), setQuoteStartMode(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
       {calculatorEnabled && view !== "settings" && !pdfViewer ? <FloatingCalculator /> : null}
+      {feedbackOpen && (
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-[#10201d]/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="feedback-title" onMouseDown={(event) => { if (event.target === event.currentTarget) setFeedbackOpen(false); }}>
+          <div className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#9a7533]">Sua opinião importa</p><h2 id="feedback-title" className="mt-1 text-2xl font-extrabold tracking-[-0.035em] text-[#172321]">Deixe sua avaliação</h2><p className="mt-2 text-sm leading-6 text-[#6f7f7b]">Conte sua experiência com o OrçaMóvel. Sua avaliação poderá aparecer no site após aprovação.</p></div>
+              <button type="button" onClick={() => setFeedbackOpen(false)} className="quiet-button !min-h-10 !w-10 !shrink-0 !p-0" aria-label="Fechar avaliação"><X size={19} /></button>
+            </div>
+            <fieldset className="mt-5"><legend className="field-label">Qual é sua nota?</legend><div className="mt-2 flex gap-1" aria-label={`Nota ${feedbackRating} de 5`}>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" onClick={() => setFeedbackRating(rating)} className="grid h-11 w-11 place-items-center rounded-xl transition-colors hover:bg-[#fff6df]" aria-label={`${rating} ${rating === 1 ? "estrela" : "estrelas"}`}><Star size={26} className={rating <= feedbackRating ? "text-[#b5914e]" : "text-[#cbd4d1]"} fill={rating <= feedbackRating ? "currentColor" : "none"} /></button>)}</div></fieldset>
+            <label className="mt-4 block"><span className="field-label">Seu nome</span><input className="field-input" value={feedbackName} onChange={(event) => setFeedbackName(event.target.value)} placeholder="Como quer aparecer no site?" autoComplete="name" /></label>
+            <label className="mt-4 block"><span className="field-label">Sua experiência</span><textarea className="field-input min-h-32 resize-y" value={feedbackText} onChange={(event) => setFeedbackText(event.target.value)} placeholder="O que você mais gostou? O que o OrçaMóvel facilitou no seu trabalho?" maxLength={700} /></label>
+            <p className="mt-2 text-xs leading-5 text-[#82908d]">Ao enviar, seu aplicativo de e-mail será aberto com a avaliação pronta. Basta confirmar o envio.</p>
+            <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => void copyFeedback()} className="quiet-button"><Mail size={17} />Copiar avaliação</button>
+              <button type="button" onClick={sendFeedback} className="primary-button"><Mail size={17} />Enviar avaliação</button>
+            </div>
+          </div>
+        </div>
+      )}
       {pdfViewer && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#f2f6f5]" role="dialog" aria-modal="true" aria-label={`Visualização de ${pdfViewer.title}`}>
           <header className="flex min-h-16 items-center gap-3 border-b border-[#dce6e3] bg-white px-3 py-2 shadow-sm sm:px-5">
