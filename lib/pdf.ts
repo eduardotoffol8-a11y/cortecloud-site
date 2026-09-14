@@ -75,7 +75,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   };
 
   // Premium letterhead with a larger logo area and more breathing room.
-  const headerHeight = 41;
+  const headerHeight = 58;
   doc.setFillColor(...emerald); doc.rect(0, 0, pageWidth, headerHeight, "F");
   doc.setFillColor(...gold); doc.rect(0, headerHeight, pageWidth, 1.2, "F");
   let brandX = margin;
@@ -105,12 +105,58 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const tagline = company.tagline?.trim() || "Marcenaria sob medida";
   textStyle([220, 235, 232], 9.5); doc.text((doc.splitTextToSize(tagline, brandWidth) as string[]).slice(0, 1), brandX, Math.min(taglineY, 31));
 
+  // Complete company identification remains inside the letterhead.
+  const companyHeaderLines = [
+    [company.document && `CPF/CNPJ: ${company.document}`, company.contact && `Contato: ${company.contact}`].filter(Boolean).join("  •  "),
+    company.email && `E-mail: ${company.email}`,
+    company.address && `Endereço: ${company.address}`,
+  ].filter(Boolean) as string[];
+  let companyHeaderY = 39.2;
+  companyHeaderLines.forEach((value) => {
+    const lines = doc.splitTextToSize(value, contentWidth) as string[];
+    textStyle([225, 237, 234], 7.5);
+    doc.text(lines, margin, companyHeaderY);
+    companyHeaderY += lines.length * 3.35 + 0.8;
+  });
+
   textStyle([229, 195, 132], 8.7, "bold"); doc.text("PROPOSTA COMERCIAL", pageWidth - margin, 10.5, { align: "right" });
   textStyle([255, 255, 255], 14.2, "bold"); doc.text(quote.number, pageWidth - margin, 19, { align: "right" });
   textStyle([219, 235, 232], 7.8); doc.text("ORÇAMENTO PROFISSIONAL", pageWidth - margin, 26.5, { align: "right" });
 
-  // Document control follows the familiar fiscal-document reading order.
-  y = 49;
+  // Client identification sits immediately below the company letterhead.
+  y = headerHeight + 9;
+  sectionTitle("Dados do cliente", 30);
+  const clientRows: Array<[string, string]> = [
+    ["NOME / RAZÃO SOCIAL", quote.client.name],
+    ["CPF/CNPJ", quote.client.document],
+    ["CONTATO", quote.client.phone],
+    ["E-MAIL", quote.client.email],
+    ["ENDEREÇO", quote.client.address],
+  ];
+  const clientColumns = clientRows.map(([label, value]) => ({
+    label,
+    lines: doc.splitTextToSize(value || "Não informado", contentWidth / 2 - 35) as string[],
+  }));
+  const leftClientRows = clientColumns.slice(0, 3);
+  const rightClientRows = clientColumns.slice(3);
+  const clientColumnHeight = (rows: typeof clientColumns) => rows.reduce((sum, row) => sum + Math.max(7, row.lines.length * 4.2 + 2.2), 0);
+  const clientHeight = Math.max(29, 8 + clientColumnHeight(leftClientRows), 8 + clientColumnHeight(rightClientRows));
+  doc.setFillColor(252, 253, 253); doc.setDrawColor(...line);
+  doc.roundedRect(margin, y, contentWidth, clientHeight, 2.5, 2.5, "FD");
+  const drawClientColumn = (rows: typeof clientColumns, x: number) => {
+    let rowY = y + 7;
+    rows.forEach(({ label, lines }) => {
+      textStyle(muted, 7.3, "bold"); doc.text(label, x, rowY);
+      textStyle(ink, 9.3); doc.text(lines, x + 31, rowY);
+      rowY += Math.max(7, lines.length * 4.2 + 2.2);
+    });
+  };
+  drawClientColumn(leftClientRows, margin + 5);
+  doc.setDrawColor(...line); doc.line(margin + contentWidth / 2, y + 5, margin + contentWidth / 2, y + clientHeight - 5);
+  drawClientColumn(rightClientRows, margin + contentWidth / 2 + 5);
+  y += clientHeight + 8;
+
+  // Document control follows the client, keeping the reading order clear.
   const controlGap = 2.2;
   const controlWidth = (contentWidth - controlGap * 2) / 3;
   const validUntil = new Date(quote.createdAt);
@@ -125,37 +171,10 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(x, y, controlWidth, 17, 2, 2, "FD");
     doc.setFillColor(...gold); doc.roundedRect(x + 3, y + 3, 1.2, 4.2, 0.5, 0.5, "F");
     textStyle(muted, 7.7, "bold"); doc.text(label, x + 6.5, y + 6.2);
-    textStyle(ink, 10.8, "bold"); doc.text(value, x + 6.5, y + 13.1);
+    textStyle(ink, 10.2, "bold"); doc.text(value, x + 6.5, y + 13.1);
   });
+  y += 25;
 
-  y = 76; sectionTitle("Identificação das partes");
-  const partyGap = 4, partyWidth = (contentWidth - partyGap) / 2;
-  const partyRows = (name: string, document: string, contact: string, email: string, address: string) => {
-    const nameLines = (doc.splitTextToSize(name || "Não informado", partyWidth - 10) as string[]).slice(0, 2);
-    const rows = [["CPF/CNPJ", document], ["CONTATO", contact], ["E-MAIL", email], ["ENDEREÇO", address]] as const;
-    return { nameLines, rows: rows.map(([label, value]) => ({ label, lines: (doc.splitTextToSize(value || "Não informado", partyWidth - 30) as string[]).slice(0, label === "ENDEREÇO" ? 3 : 2) })) };
-  };
-  const companyParty = partyRows(company.name, company.document, company.contact, company.email, company.address);
-  const clientParty = partyRows(quote.client.name, quote.client.document, quote.client.phone, quote.client.email, quote.client.address);
-  const partyContentHeight = (party: ReturnType<typeof partyRows>) => 23 + party.nameLines.length * 4.6 + party.rows.reduce((sum, row) => sum + Math.max(5.7, row.lines.length * 4 + 1.2), 0);
-  const partyHeight = Math.max(52, partyContentHeight(companyParty), partyContentHeight(clientParty));
-  const drawParty = (x: number, title: string, name: string, document: string, contact: string, email: string, address: string) => {
-    doc.setDrawColor(...line); doc.setFillColor(252, 253, 253); doc.roundedRect(x, y, partyWidth, partyHeight, 2.5, 2.5, "FD");
-    doc.setFillColor(...emerald); doc.roundedRect(x, y, partyWidth, 9, 2.5, 2.5, "F"); doc.rect(x, y + 4.5, partyWidth, 4.5, "F");
-    textStyle([255, 255, 255], 8.6, "bold"); doc.text(title, x + 5, y + 6.2);
-    const party = partyRows(name, document, contact, email, address);
-    textStyle(ink, 11.3, "bold"); doc.text(party.nameLines, x + 5, y + 15.5);
-    let rowY = y + 20 + party.nameLines.length * 4.6;
-    party.rows.forEach(({ label, lines }) => {
-      textStyle(muted, 7.5, "bold"); doc.text(label, x + 5, rowY);
-      textStyle(ink, 9.2); doc.text(lines, x + 28, rowY);
-      rowY += Math.max(5.7, lines.length * 4 + 1.2);
-    });
-  };
-  drawParty(margin, "EMITENTE / MARCENARIA", company.name, company.document, company.contact, company.email, company.address);
-  drawParty(margin + partyWidth + partyGap, "DESTINATÁRIO / CLIENTE", quote.client.name, quote.client.document, quote.client.phone, quote.client.email, quote.client.address);
-
-  y += partyHeight + 8;
   doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, 13.5, 2.2, 2.2, "FD");
   textStyle(muted, 7.3, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 5);
   textStyle(emerald, 10.2, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 10.8);
@@ -172,23 +191,6 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     y += descriptionHeight + 7;
   }
 
-  sectionTitle("Resumo comercial", 21);
-  const commercialSummary: Array<[string, string]> = [
-    ["VALOR TOTAL", brl(quoteTotal(quote))],
-    ["PRAZO", quote.closing.deliveryTime || "A definir"],
-    ["PAGAMENTO", quote.closing.paymentTerms || quote.closing.paymentMethod || "A definir"],
-    ["ITENS", `${quote.furniture.reduce((sum, item) => sum + Math.max(1, item.quantity || 1), 0)} unidade(s)`],
-  ];
-  const summaryGap = 2.2, summaryWidth = (contentWidth - summaryGap * 3) / 4;
-  commercialSummary.forEach(([label, value], index) => {
-    const x = margin + index * (summaryWidth + summaryGap);
-    doc.setFillColor(index === 0 ? emerald[0] : mist[0], index === 0 ? emerald[1] : mist[1], index === 0 ? emerald[2] : mist[2]);
-    doc.setDrawColor(...line); doc.roundedRect(x, y, summaryWidth, 19, 2.2, 2.2, index === 0 ? "F" : "FD");
-    textStyle(index === 0 ? [218, 235, 231] : muted, 7.1, "bold"); doc.text(label, x + 3.5, y + 5.6);
-    const valueLines = (doc.splitTextToSize(value, summaryWidth - 7) as string[]).slice(0, 2);
-    textStyle(index === 0 ? [255, 255, 255] : ink, index === 0 ? 10.5 : 8.7, "bold"); doc.text(valueLines, x + 3.5, y + 12);
-  });
-  y += 27;
   sectionTitle("Móveis e especificações", 46);
 
   quote.furniture.forEach((item, index) => {
@@ -228,6 +230,62 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     y += rowHeight + 5;
   });
 
+  const includedAttachments = quote.attachments?.filter((attachment) => attachment.includeInPdf !== false) || [];
+  if (includedAttachments.length) {
+    ensureSpace(17 + includedAttachments.length * 5.5); sectionTitle("Anexos incluídos");
+    includedAttachments.forEach((attachment, index) => { ensureSpace(6); textStyle(ink, 9.1); doc.text(`${String(index + 1).padStart(2, "0")}  ${attachment.name}`, margin + 1, y); y += 5.5; });
+    y += 3;
+  }
+
+
+  projectImages.forEach((image, index) => {
+    doc.addPage(); continuationHeader(); sectionTitle(`Referência visual ${String(index + 1).padStart(2, "0")} / ${String(projectImages.length).padStart(2, "0")}`);
+    try {
+      const properties = doc.getImageProperties(image.dataUrl);
+      const availableWidth = contentWidth, availableHeight = footerLimit - y - 14;
+      const scale = Math.min(availableWidth / properties.width, availableHeight / properties.height);
+      const imageWidth = properties.width * scale, imageHeight = properties.height * scale;
+      const imageX = margin + (availableWidth - imageWidth) / 2;
+      doc.setFillColor(...mist); doc.roundedRect(imageX - 2, y - 2, imageWidth + 4, imageHeight + 4, 2.5, 2.5, "F");
+      doc.addImage(image.dataUrl, imageFormat(image.dataUrl), imageX, y, imageWidth, imageHeight, undefined, "FAST");
+      textStyle(muted, 8.6); doc.text(doc.splitTextToSize(image.name, contentWidth)[0] || `Imagem ${index + 1}`, margin, y + imageHeight + 7);
+    } catch { textStyle(muted, 9.2); doc.text(`Não foi possível inserir ${image.name}.`, margin, y + 5); }
+  });
+
+
+  if (projectImages.length) {
+    doc.addPage();
+    continuationHeader();
+  }
+
+  // Commercial closing always comes after every project presentation.
+  sectionTitle("Resumo comercial", 42);
+  const commercialSummary: Array<[string, string]> = [
+    ["PRAZO", quote.closing.deliveryTime || "A definir"],
+    ["ITENS", `${quote.furniture.reduce((sum, item) => sum + Math.max(1, item.quantity || 1), 0)} unidade(s)`],
+    ["PAGAMENTO", quote.closing.paymentTerms || quote.closing.paymentMethod || "A definir"],
+    ["VALIDADE", `${quote.closing.validityDays || "15"} dias`],
+  ];
+  const summaryGap = 3;
+  const summaryWidth = (contentWidth - summaryGap) / 2;
+  for (let row = 0; row < 2; row += 1) {
+    const rowItems = commercialSummary.slice(row * 2, row * 2 + 2).map(([label, value]) => ({
+      label,
+      lines: doc.splitTextToSize(value, summaryWidth - 10) as string[],
+    }));
+    const rowHeight = Math.max(19, ...rowItems.map((item) => 12 + item.lines.length * 4.3));
+    ensureSpace(rowHeight + 3);
+    rowItems.forEach(({ label, lines }, column) => {
+      const x = margin + column * (summaryWidth + summaryGap);
+      doc.setFillColor(...mist); doc.setDrawColor(...line);
+      doc.roundedRect(x, y, summaryWidth, rowHeight, 2.2, 2.2, "FD");
+      textStyle(muted, 7.3, "bold"); doc.text(label, x + 5, y + 6);
+      textStyle(ink, 9.5, "bold"); doc.text(lines, x + 5, y + 12);
+    });
+    y += rowHeight + 3;
+  }
+  y += 3;
+
   ensureSpace(42);
   const subtotal = quoteSubtotal(quote), discount = moneyValue(quote.closing.discount), total = quoteTotal(quote);
   const onlyTotal = quote.closing.showItemPrices === false;
@@ -244,36 +302,7 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   textStyle([255, 255, 255], 11.8, "bold"); doc.text("TOTAL", totalX + 8, totalLine); doc.text(brl(total), totalX + 76, totalLine, { align: "right" });
   y += totalHeight + 11;
 
-  const includedAttachments = quote.attachments?.filter((attachment) => attachment.includeInPdf !== false) || [];
-  if (includedAttachments.length) {
-    ensureSpace(17 + includedAttachments.length * 5.5); sectionTitle("Anexos incluídos");
-    includedAttachments.forEach((attachment, index) => { ensureSpace(6); textStyle(ink, 9.1); doc.text(`${String(index + 1).padStart(2, "0")}  ${attachment.name}`, margin + 1, y); y += 5.5; });
-    y += 3;
-  }
-
-  const conditionsOnNewPage = y + 74 > footerLimit;
-  if (conditionsOnNewPage) {
-    doc.addPage(); continuationHeader();
-    textStyle(emerald, 16.5, "bold"); doc.text("Condições e aceite", margin, y + 2);
-    textStyle(muted, 9.2); doc.text("Resumo final da proposta para conferência e aprovação.", margin, y + 9.5);
-    y += 19;
-    const summaryWidth = (contentWidth - 6) / 3;
-    const summaries: Array<[string, string]> = [
-      ["VALOR DA PROPOSTA", brl(total)],
-      ["ITENS ORÇADOS", `${quote.furniture.length} ${quote.furniture.length === 1 ? "móvel" : "móveis"}`],
-      ["VALIDADE", `${quote.closing.validityDays || "15"} dias`],
-    ];
-    summaries.forEach(([label, value], index) => {
-      const x = margin + index * (summaryWidth + 3);
-      doc.setFillColor(index === 0 ? emerald[0] : mist[0], index === 0 ? emerald[1] : mist[1], index === 0 ? emerald[2] : mist[2]);
-      doc.roundedRect(x, y, summaryWidth, 22, 2.4, 2.4, "F");
-      textStyle(index === 0 ? [211, 229, 225] : muted, 7.3, "bold"); doc.text(label, x + 4, y + 6.5);
-      textStyle(index === 0 ? [255, 255, 255] : ink, 11, "bold"); doc.text(value, x + 4, y + 14.8);
-    });
-    y += 32;
-  } else {
-    ensureSpace(74);
-  }
+  ensureSpace(74);
   sectionTitle("Condições comerciais");
   const includedServices = [quote.closing.measurementIncluded !== false && "Medição técnica", quote.closing.deliveryIncluded !== false && "Entrega", quote.closing.installationIncluded !== false && "Montagem"].filter(Boolean).join(" • ");
   const terms: Array<[string, string]> = [
@@ -311,20 +340,6 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   y += 14;
   doc.setDrawColor(152, 166, 162); doc.line(margin, y, margin + 70, y); doc.line(pageWidth - margin - 70, y, pageWidth - margin, y);
   textStyle(muted, 8.9); doc.text("Responsável pela marcenaria", margin + 35, y + 5.5, { align: "center" }); doc.text("Cliente", pageWidth - margin - 35, y + 5.5, { align: "center" });
-
-  projectImages.forEach((image, index) => {
-    doc.addPage(); continuationHeader(); sectionTitle(`Referência visual ${String(index + 1).padStart(2, "0")} / ${String(projectImages.length).padStart(2, "0")}`);
-    try {
-      const properties = doc.getImageProperties(image.dataUrl);
-      const availableWidth = contentWidth, availableHeight = footerLimit - y - 14;
-      const scale = Math.min(availableWidth / properties.width, availableHeight / properties.height);
-      const imageWidth = properties.width * scale, imageHeight = properties.height * scale;
-      const imageX = margin + (availableWidth - imageWidth) / 2;
-      doc.setFillColor(...mist); doc.roundedRect(imageX - 2, y - 2, imageWidth + 4, imageHeight + 4, 2.5, 2.5, "F");
-      doc.addImage(image.dataUrl, imageFormat(image.dataUrl), imageX, y, imageWidth, imageHeight, undefined, "FAST");
-      textStyle(muted, 8.6); doc.text(doc.splitTextToSize(image.name, contentWidth)[0] || `Imagem ${index + 1}`, margin, y + imageHeight + 7);
-    } catch { textStyle(muted, 9.2); doc.text(`Não foi possível inserir ${image.name}.`, margin, y + 5); }
-  });
 
   const quotePages = doc.getNumberOfPages();
   for (let page = 1; page <= quotePages; page += 1) {
