@@ -95,10 +95,10 @@ export default function MoveisPresentationPage() {
 
         <section id="pdf" className={styles.pdfSection}>
           <div className={`${styles.container} ${styles.pdfGrid}`}>
-            <div className={styles.paperWrap}><a href={`${assets}/ORC-2026-001-Jose-Silva.pdf`} target="_blank" rel="noopener noreferrer" aria-label="Abrir PDF de exemplo José Silva, completo em nova aba"><Image className={styles.paper} src={`${assets}/ORC-2026-001-Jose-Silva.png`} alt="Primeira página do PDF real de exemplo: proposta comercial da Moveis Bella kaza para José Silva, com móveis e especificações" width={953} height={1348} sizes="(max-width: 800px) 85vw, 440px" /></a><p>PDF real gerado no OrçaMóvel · exemplo fornecido</p></div>
+            <div className={styles.paperWrap}><Image className={styles.paper} src={`${assets}/marca.jpg`} alt="Personalização das cores da marcenaria no OrçaMóvel" width={691} height={1536} sizes="(max-width: 800px) 85vw, 440px" /><p>Personalização da marca no aplicativo</p></div>
             <div><p className={styles.eyebrow}>A SUA MARCA EM CADA DETALHE</p><h2>Seu orçamento.<br />A sua identidade.</h2><p className={styles.lead}>Transforme os detalhes do projeto em uma proposta organizada, pronta para apresentar ao cliente.</p>
               <ul className={styles.checkList}>{["Nome, logo e cores da sua marcenaria", "Móveis, medidas, materiais e acabamentos", "Valores e condições comerciais em um documento", "PDF pronto para baixar e compartilhar"].map(item => <li key={item}><Check size={19} aria-hidden="true" />{item}</li>)}</ul>
-              <div className={styles.pdfLinks}><a className={styles.button} href={`${assets}/ORC-2026-001-Jose-Silva.pdf`} target="_blank" rel="noopener noreferrer">Ver PDF de exemplo <ArrowRight size={18} aria-hidden="true" /></a><a href={`${assets}/ORC-2026-002-Vitoria-Silva.pdf`} className={styles.textLink} target="_blank" rel="noopener noreferrer">Ver segundo exemplo</a></div>
+              <div className={styles.pdfLinks}><TrialLink /></div>
             </div>
           </div>
         </section>
