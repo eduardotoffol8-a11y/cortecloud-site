@@ -75,49 +75,78 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   };
 
   // Premium letterhead with a larger logo area and more breathing room.
-  const headerHeight = 58;
+  const headerHeight = 46;
   doc.setFillColor(...emerald); doc.rect(0, 0, pageWidth, headerHeight, "F");
   doc.setFillColor(...gold); doc.rect(0, headerHeight, pageWidth, 1.2, "F");
   let brandX = margin;
   if (company.logo) {
     try {
-      const boxX = margin, boxY = 6, boxW = 31, boxH = 29;
-      doc.setFillColor(255, 255, 255); doc.roundedRect(boxX, boxY, boxW, boxH, 2.8, 2.8, "F");
+      const boxX = margin, boxY = 4, boxW = 32, boxH = 28;
+      doc.setFillColor(255, 255, 255); doc.setDrawColor(244, 246, 245);
+      doc.roundedRect(boxX, boxY, boxW, boxH, 2.8, 2.8, "FD");
       const properties = doc.getImageProperties(company.logo);
-      const maxW = 27, maxH = 25;
+      const maxW = 28, maxH = 24;
       const scale = Math.min(maxW / properties.width, maxH / properties.height);
       const logoW = properties.width * scale, logoH = properties.height * scale;
       const logoX = boxX + (boxW - logoW) / 2, logoY = boxY + (boxH - logoH) / 2;
       doc.addImage(company.logo, imageFormat(company.logo), logoX, logoY, logoW, logoH, undefined, "FAST");
-      brandX = margin + 37;
+      brandX = margin + 38;
     } catch { /* Company name remains the letterhead. */ }
   }
 
-  const brandWidth = company.logo ? 87 : 118;
+  const brandWidth = company.logo ? 91 : 124;
   doc.setTextColor(255, 255, 255);
   doc.setFont("times", "bold");
-  doc.setFontSize(18.2);
-  doc.setLineHeightFactor(1.12);
-  doc.setCharSpace(0.12);
-  const companyNameLines = (doc.splitTextToSize(company.name || "Sua marcenaria", brandWidth) as string[]).slice(0, 2);
-  doc.text(companyNameLines, brandX, 13.8);
-  const taglineY = 14.2 + companyNameLines.length * 6.3 + 1.5;
-  const tagline = company.tagline?.trim() || "Marcenaria sob medida";
-  textStyle([220, 235, 232], 9.5); doc.text((doc.splitTextToSize(tagline, brandWidth) as string[]).slice(0, 1), brandX, Math.min(taglineY, 31));
+  doc.setLineHeightFactor(1.05);
+  doc.setCharSpace(0.08);
+  let companyNameSize = 17.2;
+  let companyNameLines = doc.splitTextToSize(company.name || "Sua marcenaria", brandWidth) as string[];
+  while (companyNameLines.length > 2 && companyNameSize > 12.5) {
+    companyNameSize -= 0.5;
+    doc.setFontSize(companyNameSize);
+    companyNameLines = doc.splitTextToSize(company.name || "Sua marcenaria", brandWidth) as string[];
+  }
+  doc.setFontSize(companyNameSize);
+  doc.text(companyNameLines, brandX, 11.5);
 
-  // Complete company identification remains inside the letterhead.
-  const companyHeaderLines = [
-    [company.document && `CPF/CNPJ: ${company.document}`, company.contact && `Contato: ${company.contact}`].filter(Boolean).join("  •  "),
+  const tagline = company.tagline?.trim() || "Marcenaria sob medida";
+  let taglineSize = 9.2;
+  textStyle([220, 235, 232], taglineSize);
+  let taglineLines = doc.splitTextToSize(tagline, brandWidth) as string[];
+  while (taglineLines.length > 2 && taglineSize > 7.6) {
+    taglineSize -= 0.4;
+    textStyle([220, 235, 232], taglineSize);
+    taglineLines = doc.splitTextToSize(tagline, brandWidth) as string[];
+  }
+  const taglineY = 11.5 + companyNameLines.length * companyNameSize * 0.37 + 1.4;
+  doc.text(taglineLines, brandX, taglineY);
+
+  // Administrative strip is visually separated from the brand.
+  doc.setDrawColor(...gold); doc.setLineWidth(0.25); doc.line(margin, 33.5, pageWidth - margin, 33.5);
+  const contactLine = [
+    company.document && `CPF/CNPJ: ${company.document}`,
+    company.contact && `WhatsApp: ${company.contact}`,
     company.email && `E-mail: ${company.email}`,
-    company.address && `Endereço: ${company.address}`,
-  ].filter(Boolean) as string[];
-  let companyHeaderY = 39.2;
-  companyHeaderLines.forEach((value) => {
-    const lines = doc.splitTextToSize(value, contentWidth) as string[];
-    textStyle([225, 237, 234], 7.5);
-    doc.text(lines, margin, companyHeaderY);
-    companyHeaderY += lines.length * 3.35 + 0.8;
-  });
+  ].filter(Boolean).join("   •   ");
+  let contactSize = 7.9;
+  textStyle([231, 240, 238], contactSize);
+  while (contactLine && doc.getTextWidth(contactLine) > contentWidth && contactSize > 6.8) {
+    contactSize -= 0.2;
+    textStyle([231, 240, 238], contactSize);
+  }
+  if (contactLine) doc.text(contactLine, margin, 37.8);
+
+  if (company.address) {
+    let addressSize = 7.5;
+    textStyle([218, 233, 230], addressSize);
+    let addressLines = doc.splitTextToSize(`Endereço: ${company.address}`, contentWidth) as string[];
+    while (addressLines.length > 2 && addressSize > 6.5) {
+      addressSize -= 0.2;
+      textStyle([218, 233, 230], addressSize);
+      addressLines = doc.splitTextToSize(`Endereço: ${company.address}`, contentWidth) as string[];
+    }
+    doc.text(addressLines, margin, 42.1);
+  }
 
   textStyle([229, 195, 132], 8.7, "bold"); doc.text("PROPOSTA COMERCIAL", pageWidth - margin, 10.5, { align: "right" });
   textStyle([255, 255, 255], 14.2, "bold"); doc.text(quote.number, pageWidth - margin, 19, { align: "right" });
@@ -175,10 +204,12 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   });
   y += 25;
 
-  doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, 13.5, 2.2, 2.2, "FD");
+  const projectLocationLines = doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[];
+  const projectLocationHeight = Math.max(13.5, 8 + projectLocationLines.length * 4.3);
+  doc.setFillColor(...mist); doc.setDrawColor(...line); doc.roundedRect(margin, y, contentWidth, projectLocationHeight, 2.2, 2.2, "FD");
   textStyle(muted, 7.3, "bold"); doc.text("PROJETO / LOCAL DA OBRA", margin + 5, y + 5);
-  textStyle(emerald, 10.2, "bold"); doc.text((doc.splitTextToSize(quote.client.projectName || quote.client.address || "Projeto não informado", contentWidth - 10) as string[]).slice(0, 1), margin + 5, y + 10.8);
-  y += 22;
+  textStyle(emerald, 10.2, "bold"); doc.text(projectLocationLines, margin + 5, y + 10.8);
+  y += projectLocationHeight + 8;
 
   const projectDescription = quote.closing.projectDescription?.trim();
   if (projectDescription) {
@@ -197,23 +228,25 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     const dimensions = `${item.width || "-"} L × ${item.height || "-"} A × ${item.depth || "-"} P mm`;
     const material = `MDF ${item.mdfThickness || "-"} mm · ${item.mdfColor || "Cor não informada"}`;
     const finish = [item.frontColor && `Frentes: ${item.frontColor}`, item.handle && `Puxador: ${item.handle}`].filter(Boolean).join(" · ") || "Conforme especificação";
-    const technicalValues = [dimensions, material, finish].map((value) => (doc.splitTextToSize(value, 50) as string[]).slice(0, 2));
+    const technicalValues = [dimensions, material, finish].map((value) => doc.splitTextToSize(value, 50) as string[]);
     const maxTechnicalLines = Math.max(...technicalValues.map((lines) => lines.length));
     const detailLines = doc.splitTextToSize(itemDetails(item), contentWidth - 12) as string[];
-    const technicalHeight = Math.max(17, 9 + maxTechnicalLines * 4);
-    const rowHeight = 18 + technicalHeight + Math.max(10, detailLines.length * 4.6 + 5);
+    const titleLines = doc.splitTextToSize(`${item.environment || "Ambiente"} — ${item.name || "Móvel"}`, contentWidth - 75) as string[];
+    const furnitureHeaderHeight = Math.max(18, 8 + titleLines.length * 4.8);
+    const technicalHeight = Math.max(17, 9 + maxTechnicalLines * 4.2);
+    const rowHeight = furnitureHeaderHeight + technicalHeight + Math.max(10, detailLines.length * 4.6 + 5);
     ensureSpace(rowHeight + 5);
     doc.setDrawColor(...line); doc.setLineWidth(0.25); doc.setFillColor(252, 253, 253);
     doc.roundedRect(margin, y, contentWidth, rowHeight, 2.4, 2.4, "FD");
     doc.setFillColor(...emerald); doc.roundedRect(margin + 4, y + 5, 10.5, 8.5, 2, 2, "F");
     textStyle([255, 255, 255], 8.4, "bold"); doc.text(String(index + 1).padStart(2, "0"), margin + 9.25, y + 10.8, { align: "center" });
-    textStyle(ink, 11.7, "bold"); doc.text(doc.splitTextToSize(`${item.environment || "Ambiente"} — ${item.name || "Móvel"}`, contentWidth - 75)[0], margin + 18, y + 11);
+    textStyle(ink, 11.4, "bold"); doc.text(titleLines, margin + 18, y + 11);
     textStyle(muted, 9.2); doc.text(`${Math.max(1, item.quantity || 1)} un.`, pageWidth - margin - (quote.closing.showItemPrices !== false ? 47 : 4), y + 11, { align: "right" });
     if (quote.closing.showItemPrices !== false) {
       textStyle(emerald, 11.7, "bold"); doc.text(brl(moneyValue(item.unitPrice) * Math.max(1, item.quantity || 1)), pageWidth - margin - 4, y + 11, { align: "right" });
     }
 
-    const technicalY = y + 16;
+    const technicalY = y + furnitureHeaderHeight;
     doc.setFillColor(...mist); doc.roundedRect(margin + 4, technicalY, contentWidth - 8, technicalHeight, 1.7, 1.7, "F");
     const technicalLabels = ["DIMENSÕES", "MATERIAL", "FRENTES E PUXADOR"];
     const technicalColumnWidth = (contentWidth - 14) / 3;
