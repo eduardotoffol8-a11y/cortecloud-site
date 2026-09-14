@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, FileText, FolderOpen, Palette, Smartphone, Star, UsersRound } from "lucide-react";
+import { ArrowRight, Check, FileText, FolderOpen, Monitor, Palette, Star, UsersRound } from "lucide-react";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
-  title: "OrçaMóvel | Orçamentos profissionais direto do celular",
-  description: "Cadastre clientes, monte propostas de móveis sob medida e gere PDFs personalizados com a identidade da sua marcenaria. Teste o OrçaMóvel por 30 dias grátis.",
+  title: "OrçaMóvel | Orçamentos profissionais no celular e computador",
+  description: "Cadastre clientes, monte propostas de móveis sob medida e gere PDFs personalizados no celular ou computador. Teste o OrçaMóvel por 30 dias grátis.",
 };
 
 const assets = "/orcamovel/apresentacao";
@@ -25,14 +25,15 @@ const reviews = [
   { name: "Diego Martins", profile: "Profissional de móveis planejados", title: "Tudo mais organizado", text: "Para quem fazia tudo no improviso, o OrçaMóvel ajuda bastante. Cliente, orçamento e PDF ficam no mesmo lugar, o que economiza tempo e evita retrabalho.", avatar: { bg: "#e5eadb", skin: "#c7835e", hair: "#312a25", shirt: "#68784d" } },
 ];
 const benefits = [
-  { icon: Smartphone, title: "Praticidade no celular", text: "Monte suas propostas onde estiver, direto pelo navegador." },
+  { icon: Monitor, title: "Celular e computador", text: "Use a mesma conta no navegador ou instale o OrçaMóvel no seu dispositivo." },
   { icon: FolderOpen, title: "Mais organização", text: "Reúna clientes, orçamentos e PDFs no mesmo aplicativo." },
   { icon: FileText, title: "Uma apresentação profissional", text: "Envie uma proposta clara, com os detalhes dos móveis sob medida." },
   { icon: Palette, title: "A identidade da sua marcenaria", text: "Personalize o PDF com nome, logo e cores da sua empresa." },
 ];
 const faq = [
-  ["Preciso instalar para usar?", "Não. Você pode acessar pelo navegador. Se preferir, instale o OrçaMóvel no celular para abrir o aplicativo diretamente pelo ícone."],
-  ["O que consigo fazer pelo celular?", "Cadastrar clientes, montar propostas de móveis sob medida, consultar orçamentos e gerar PDFs personalizados."],
+  ["Preciso instalar para usar?", "Não. Você pode acessar pelo navegador no celular ou computador. Se preferir, instale o OrçaMóvel para abrir diretamente pelo ícone."],
+  ["Posso usar no computador?", "Sim. O OrçaMóvel funciona no PC pelo navegador e também pode ser instalado como aplicativo no Chrome ou Edge. Você entra com a mesma conta usada no celular."],
+  ["O que consigo fazer pelo celular ou PC?", "Cadastrar clientes, montar propostas de móveis sob medida, consultar orçamentos e gerar PDFs personalizados."],
   ["Posso colocar a marca da minha marcenaria?", "Sim. Nos ajustes, você pode configurar os dados da empresa, a logo e as cores usadas nos PDFs."],
   ["Como funcionam os 30 dias grátis?", "Você pode experimentar o aplicativo por 30 dias, sem cartão. A data de término aparece na área de ajustes do seu plano."],
   ["Existe cobrança automática depois do teste?", "Não. Os planos atuais têm pagamento avulso. Você escolhe um plano no aplicativo para continuar após o período grátis, sem renovação automática."],
@@ -81,10 +82,10 @@ export default function MoveisPresentationPage() {
         <section className={`${styles.container} ${styles.hero}`}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>DA SUA MARCENARIA PARA O CLIENTE</p>
-            <h1>Faça orçamentos profissionais <span>direto do celular.</span></h1>
+            <h1>Faça orçamentos profissionais <span>no celular ou computador.</span></h1>
             <p className={styles.lead}>Cadastre clientes, monte propostas de móveis sob medida e gere PDFs personalizados com a identidade da sua marcenaria.</p>
             <div className={styles.actions}><TrialLink /><a href="#galeria" className={styles.textLink}>Veja o aplicativo</a></div>
-            <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> No seu celular</p>
+            <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> No celular e no PC</p>
           </div>
           <div className={styles.heroVisual}>
             <div className={styles.visualLabel}>SEU TRABALHO MERECE UMA BOA PROPOSTA.</div>
