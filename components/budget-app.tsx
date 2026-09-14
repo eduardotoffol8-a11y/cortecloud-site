@@ -769,7 +769,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     return () => lifecycle.abort();
   }, [startNewQuote]);
 
-  if (!hydrated) return <div className="grid min-h-screen place-items-center"><BrandMark /></div>;
+  if (!hydrated) return <div className="grid min-h-screen place-items-center"><BrandMark loading /></div>;
   if (showPlans) return <PricingScreen email={userEmail} onSignOut={onSignOut} onRefresh={() => window.location.reload()} onBack={() => setShowPlans(false)} trialEnded={false} />;
   if (onboarding) return (
     <main className="min-h-screen bg-[#f2f6f5] px-4 py-7 sm:px-6" style={companyTheme(company)}>

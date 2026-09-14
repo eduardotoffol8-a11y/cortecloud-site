@@ -1,9 +1,9 @@
 import Image from "next/image";
 
-export function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false, loading = false }: { compact?: boolean; loading?: boolean }) {
   return (
     <div className="flex items-center gap-3">
-      <Image src="/orcamovel-brand-192.png" alt="Logo do OrçaMóvel" width={48} height={48} priority className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm" />
+      <Image src="/app-icon.svg" alt="Logo do OrçaMóvel" width={48} height={48} priority className={`h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ${loading ? "animate-pulse" : ""}`} />
       {!compact && (
         <div>
           <p className="text-[1.05rem] font-extrabold tracking-[-0.025em] text-[#172321]">OrçaMóvel</p>

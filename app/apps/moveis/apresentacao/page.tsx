@@ -52,7 +52,7 @@ export default function MoveisPresentationPage() {
       <header className={styles.header}>
         <div className={styles.headerInner}>
           <Link href="/" className={styles.brand} aria-label="OrçaMóvel - página inicial">
-            <Image src="/orcamovel-brand-192.png" width={44} height={44} alt="" />
+            <Image src="/app-icon.svg" width={44} height={44} alt="" />
             <span>OrçaMóvel<small>Marcenaria sob medida</small></span>
           </Link>
           <nav aria-label="Navegação principal" className={styles.nav}>

@@ -12,7 +12,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountProfile } from "@/lib/types";
 
 function LoadingScreen() {
-  return <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-6"><div className="text-center"><div className="mx-auto mb-4 w-fit"><BrandMark /></div><LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={24} /></div></main>;
+  return <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-6"><div className="text-center"><div className="mx-auto mb-4 w-fit"><BrandMark loading /></div><LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={24} /></div></main>;
 }
 
 function AuthScreen() {
