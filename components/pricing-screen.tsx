@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { PlanType } from "@/lib/types";
 
 export const LIFETIME_PROMO_END = new Date("2026-09-21T03:59:59.000Z").getTime();
+type CommercialSettings = { monthly_price:number; annual_price:number; lifetime_price:number; lifetime_promo_price:number; promotion_ends_at:string };
 const planRank: Record<PlanType, number> = { monthly: 1, annual: 2, lifetime: 3 };
 const planNames: Record<PlanType, string> = { monthly: "Mensal", annual: "Anual", lifetime: "Vitalício" };
 
@@ -27,6 +28,7 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
   const [currentPlan, setCurrentPlan] = useState<PlanType | null>(null);
   const [hasActivePlan, setHasActivePlan] = useState(false);
   const [checkingPlan, setCheckingPlan] = useState(true);
+  const [commercial, setCommercial] = useState<CommercialSettings>({ monthly_price:9.99, annual_price:99.99, lifetime_price:249.99, lifetime_promo_price:149.99, promotion_ends_at:new Date(LIFETIME_PROMO_END).toISOString() });
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
@@ -53,18 +55,26 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
   }, []);
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      void supabase.rpc("get_orcamovel_settings").then(({ data }) => { const row = Array.isArray(data) ? data[0] : data; if (row) setCommercial(row as CommercialSettings); });
+      const sid = sessionStorage.getItem("orcamovel.analytics.session.v1") || crypto.randomUUID();
+      sessionStorage.setItem("orcamovel.analytics.session.v1", sid);
+      void supabase.rpc("track_orcamovel_event", { p_event_type: "plans_open", p_session_id: sid, p_metadata: { source: "app" } });
+    }
     void loadCurrentPlan();
     const onFocus = () => void loadCurrentPlan();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [loadCurrentPlan]);
 
-  const offer = countdown(LIFETIME_PROMO_END, now);
+  const offer = countdown(new Date(commercial.promotion_ends_at).getTime(), now);
+  const money = (value:number) => new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(value);
   const plans = useMemo(() => [
-    { id: "monthly" as const, name: "Mensal", price: "R$ 9,99", detail: "30 dias de acesso · pagamento único" },
-    { id: "annual" as const, name: "Anual", price: "R$ 99,99", detail: "365 dias de acesso · pagamento único" },
-    { id: "lifetime" as const, name: "Vitalício", price: offer.remaining ? "R$ 149,99" : "R$ 249,99", oldPrice: offer.remaining ? "R$ 249,99" : "", detail: "Acesso sem vencimento · pagamento único", highlight: true },
-  ], [offer.remaining]);
+    { id: "monthly" as const, name: "Mensal", price: money(commercial.monthly_price), detail: "30 dias de acesso · pagamento único" },
+    { id: "annual" as const, name: "Anual", price: money(commercial.annual_price), detail: "365 dias de acesso · pagamento único" },
+    { id: "lifetime" as const, name: "Vitalício", price: money(offer.remaining ? commercial.lifetime_promo_price : commercial.lifetime_price), oldPrice: offer.remaining ? money(commercial.lifetime_price) : "", detail: "Acesso sem vencimento · pagamento único", highlight: true },
+  ], [commercial, offer.remaining]);
 
   const choosePlan = async (plan: PlanType) => {
     if (hasActivePlan && currentPlan && planRank[plan] <= planRank[currentPlan]) return;
@@ -72,6 +82,9 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
     if (!supabase) return;
     setLoading(plan);
     setMessage("");
+    const sid = sessionStorage.getItem("orcamovel.analytics.session.v1") || crypto.randomUUID();
+    sessionStorage.setItem("orcamovel.analytics.session.v1", sid);
+    void supabase.rpc("track_orcamovel_event", { p_event_type: "checkout_started", p_session_id: sid, p_metadata: { plan } });
     const { data, error } = await supabase.functions.invoke("create-mercado-pago-checkout", { body: { plan } });
     if (error || !data?.checkoutUrl) {
       let detail = data?.error as string | undefined;

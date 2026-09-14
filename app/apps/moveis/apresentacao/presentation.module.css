@@ -195,3 +195,21 @@
   .actions .installCta { width: 100%; }
   .actions .installCta :global(.install-pill) { width: 100%; justify-content: center; }
 }
+
+@keyframes ctaGlow { 0%,100% { box-shadow:0 9px 24px rgba(9,86,77,.24),0 0 0 0 rgba(236,170,45,.38);transform:translateY(0) } 50% { box-shadow:0 13px 30px rgba(9,86,77,.3),0 0 0 7px rgba(236,170,45,0);transform:translateY(-2px) } }
+.attentionCta { background:linear-gradient(135deg,#f2a91f,#d87b0d)!important;border-color:#d87b0d!important;color:#241604!important;font-weight:850!important;animation:ctaGlow 2.4s ease-in-out infinite }
+.attentionCta:hover { background:linear-gradient(135deg,#ffbd3d,#e68a13)!important;animation-play-state:paused;transform:translateY(-2px) }
+.plans article :is(.button,.outlineButton) { background:linear-gradient(135deg,#0b685d,#084b44);color:#fff;border-color:#0b685d;box-shadow:0 8px 20px rgba(9,86,77,.2);transition:transform .2s ease,box-shadow .2s ease }
+.plans article :is(.button,.outlineButton):hover { transform:translateY(-3px);box-shadow:0 13px 28px rgba(9,86,77,.28) }
+.featuredPlan :is(.button,.outlineButton) { background:linear-gradient(135deg,#f2a91f,#d87b0d);border-color:#d87b0d;color:#241604;animation:ctaGlow 2.4s ease-in-out infinite }
+.calculatorPreview { position:relative;height:552px;overflow:hidden;border:5px solid #e0e8e5;border-radius:22px;background:linear-gradient(#e9f4f1,#fff);padding:26px 17px }
+.calcDashboard { height:145px;border-radius:20px;background:#153b58;color:#fff;padding:22px;display:flex;flex-direction:column;font-size:1.35rem }
+.calcDashboard span { margin-top:8px;font-size:.7rem;color:#c9dce8 }
+.calcPanel { position:absolute;inset:80px 10px 16px;border-radius:24px;background:#fff;box-shadow:0 18px 38px #153b5830;padding:16px }
+.calcTitle { display:flex;justify-content:space-between;align-items:center;color:#29475b;border-bottom:1px solid #e3e8e8;padding:5px 3px 14px }
+.calcDisplay { margin-top:14px;border-radius:16px;background:#153b58;color:#fff;text-align:right;padding:16px;font-size:2.3rem }
+.calcKeys { margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:7px }
+.calcKeys span { display:grid;min-height:48px;place-items:center;border-radius:13px;background:#f0f3f2;color:#172321 }
+.calcKeys span:nth-last-child(3){grid-column:span 2}
+.calcKeys .calcEqual { background:#164766;color:#fff }
+@media (prefers-reduced-motion:reduce){.attentionCta,.featuredPlan :is(.button,.outlineButton){animation:none}}

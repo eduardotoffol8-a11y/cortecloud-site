@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, Send, UsersRound } from "lucide-react";
 import { InstallAppButton } from "@/components/install-app-button";
+import { LandingAnalytics } from "@/components/landing-analytics";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
@@ -42,12 +43,12 @@ const faq = [
 ];
 
 function TrialLink({ light = false }: { light?: boolean }) {
-  return <Link href="/apps/moveis" className={`${styles.button} ${light ? styles.lightButton : ""}`}>Criar conta e testar grátis <ArrowRight size={18} aria-hidden="true" /></Link>;
+  return <Link href="/apps/moveis" data-track="app_cta" className={`${styles.button} ${styles.attentionCta} ${light ? styles.lightButton : ""}`}>Criar conta e testar grátis <ArrowRight size={18} aria-hidden="true" /></Link>;
 }
 
 export default function MoveisPresentationPage() {
   return (
-    <div className={styles.page}>
+    <div className={styles.page}><LandingAnalytics />
       <a href="#conteudo" className={styles.skip}>Pular para o conteúdo</a>
       <header className={styles.header}>
         <div className={styles.headerInner}>
@@ -57,9 +58,9 @@ export default function MoveisPresentationPage() {
           </Link>
           <nav aria-label="Navegação principal" className={styles.nav}>
             <a href="#como-funciona" className={styles.desktopLink}>Como funciona</a>
-            <a href="#planos" className={styles.desktopLink}>Planos</a>
+            <a href="#planos" data-track="plans_open" className={styles.desktopLink}>Planos</a>
             <span className={styles.headerInstall}><InstallAppButton /></span>
-            <Link href="/apps/moveis" className={styles.openApp}>Entrar no app <ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href="/apps/moveis" className={`${styles.openApp} ${styles.attentionCta}`}>Entrar no app <ArrowRight size={16} aria-hidden="true" /></Link>
           </nav>
         </div>
       </header>
@@ -69,7 +70,7 @@ export default function MoveisPresentationPage() {
             <p className={styles.eyebrow}>ORÇAMENTOS PROFISSIONAIS PARA MARCENARIA</p>
             <h1>Organize seus orçamentos e apresente sua marcenaria <span>com mais profissionalismo.</span></h1>
             <p className={styles.lead}>Do primeiro atendimento ao envio da proposta: cadastre clientes, detalhe cada móvel, organize revisões e gere PDFs com a identidade da sua marcenaria — pelo celular ou computador.</p>
-            <div className={styles.actions}><TrialLink /><span className={styles.installCta}><InstallAppButton /></span><a href="#planos" className={styles.textLink}>Comparar planos</a></div>
+            <div className={styles.actions}><TrialLink /><span className={styles.installCta}><InstallAppButton /></span><a href="#planos" data-track="plans_open" className={styles.textLink}>Comparar planos</a></div>
             <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> Seus PDFs ficam arquivados</p>
           </div>
           <div className={styles.heroVisual}>
@@ -88,11 +89,18 @@ export default function MoveisPresentationPage() {
 
         <section id="galeria" className={`${styles.container} ${styles.section}`}>
           <div className={styles.sectionHead}><div><p className={styles.eyebrow}>POR DENTRO DO ORÇAMÓVEL</p><h2>Veja o que você vai usar.</h2></div><p>Telas reais do aplicativo.<br />Deslize para explorar e toque para ampliar.</p></div>
-          <div className={styles.gallery} tabIndex={0} role="region" aria-label="Galeria de cinco capturas reais do aplicativo">
+          <div className={styles.gallery} tabIndex={0} role="region" aria-label="Galeria de seis recursos do aplicativo">
             {screenshots.map((shot, index) => <figure key={shot.file} className={styles.shot}>
               <a href={`${assets}/${shot.file}`} target="_blank" rel="noopener noreferrer" aria-label={`Ampliar captura: ${shot.title} (nova aba)`}><Image src={`${assets}/${shot.file}`} alt={shot.title} width={691} height={1536} sizes="(max-width: 600px) 240px, 260px" /></a>
               <figcaption><span>0{index + 1}</span><h3>{shot.title}</h3><p>{shot.description}</p></figcaption>
             </figure>)}
+            <figure className={styles.shot}>
+              <div className={styles.calculatorPreview} aria-label="Prévia da calculadora flutuante">
+                <div className={styles.calcDashboard}><strong>Seu negócio</strong><span>Orçamentos e clientes</span></div>
+                <div className={styles.calcPanel}><div className={styles.calcTitle}><span>▣</span><strong>Calculadora</strong><span>—</span></div><div className={styles.calcDisplay}>0</div><div className={styles.calcKeys}>{["C","⌫","%","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",",","="].map(key=><span key={key} className={key==="=" ? styles.calcEqual : ""}>{key}</span>)}</div></div>
+              </div>
+              <figcaption><span>06</span><h3>Calculadora sempre à mão</h3><p>Faça contas durante o orçamento sem sair do aplicativo.</p></figcaption>
+            </figure>
           </div>
         </section>
 
@@ -140,9 +148,9 @@ export default function MoveisPresentationPage() {
         <section id="planos" className={`${styles.container} ${styles.section}`}>
           <div className={styles.centerHead}><p className={styles.eyebrow}>COMECE PELO TESTE</p><h2>Comece sem risco.<br />Continue no plano que fizer sentido.</h2><p>Teste o fluxo completo por 30 dias, sem cartão. Quando estiver pronto, escolha o período de acesso.</p><TrialLink /></div>
           <div className={styles.plans}>
-            <article><p className={styles.planName}>Mensal</p><p className={styles.price}>R$ 9,99</p><p>30 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" className={styles.outlineButton}>Escolher plano mensal <ArrowRight size={17} /></Link></article>
-            <article className={styles.featuredPlan}><p className={styles.planName}>Anual</p><p className={styles.price}>R$ 99,99</p><p>365 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" className={styles.button}>Escolher plano anual <ArrowRight size={17} /></Link></article>
-            <article><p className={styles.planName}>Vitalício</p><p className={styles.lifetimePrice}>Acesso sem vencimento</p><p>Consulte a oferta vigente no app</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único</li></ul><Link href="/apps/moveis?plans=1" className={styles.outlineButton}>Ver oferta vitalícia <ArrowRight size={17} /></Link></article>
+            <article><p className={styles.planName}>Mensal</p><p className={styles.price}>R$ 9,99</p><p>30 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" data-track="plans_open" className={styles.outlineButton}>Escolher plano mensal <ArrowRight size={17} /></Link></article>
+            <article className={styles.featuredPlan}><p className={styles.planName}>Anual</p><p className={styles.price}>R$ 99,99</p><p>365 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" data-track="plans_open" className={styles.button}>Escolher plano anual <ArrowRight size={17} /></Link></article>
+            <article><p className={styles.planName}>Vitalício</p><p className={styles.lifetimePrice}>Acesso sem vencimento</p><p>Consulte a oferta vigente no app</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único</li></ul><Link href="/apps/moveis?plans=1" data-track="plans_open" className={styles.outlineButton}>Ver oferta vitalícia <ArrowRight size={17} /></Link></article>
           </div><p className={styles.planNote}>Pagamentos avulsos. Não há renovação nem cobrança automática ao fim do período.<br />A contratação e a confirmação dos valores acontecem dentro do aplicativo.</p>
         </section>
 
@@ -155,7 +163,7 @@ export default function MoveisPresentationPage() {
 
         <section className={styles.finalCta}><div className={styles.container}><p className={styles.eyebrow}>SEU PRÓXIMO ORÇAMENTO COMEÇA AQUI</p><h2>Seu próximo orçamento pode<br />parecer tão profissional quanto seu trabalho.</h2><p>Organize clientes, propostas e revisões em um app feito para marcenaria.</p><div className={styles.finalActions}><TrialLink light /><span className={styles.installCta}><InstallAppButton /></span></div><small>30 dias grátis · Sem cartão · Celular e computador</small></div></section>
       </main>
-      <footer className={`${styles.container} ${styles.footer}`}><span>OrçaMóvel · Orçamentos profissionais para marcenaria</span><div><a href="#planos">Planos</a><Link href="/apps/moveis">Entrar no app</Link></div></footer>
+      <footer className={`${styles.container} ${styles.footer}`}><span>OrçaMóvel · Orçamentos profissionais para marcenaria</span><div><a href="#planos" data-track="plans_open">Planos</a><Link href="/apps/moveis">Entrar no app</Link></div></footer>
     </div>
   );
 }

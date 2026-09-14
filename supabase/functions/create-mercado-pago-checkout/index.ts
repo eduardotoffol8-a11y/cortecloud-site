@@ -1,12 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
-const lifetimePromotionEndsAt = new Date("2026-09-21T03:59:59.000Z").getTime();
-const plans = {
-  monthly: { title: "OrçaMóvel Mensal", price: 9.99 },
-  annual: { title: "OrçaMóvel Anual", price: 99.99 },
-  lifetime: { title: "OrçaMóvel Vitalício", price: Date.now() <= lifetimePromotionEndsAt ? 149.99 : 249.99 },
-} as const;
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -22,6 +16,14 @@ Deno.serve(async (request) => {
   const jwt = authorization.replace(/^Bearer\s+/i, "");
   const { data: { user }, error: userError } = await client.auth.getUser(jwt);
   if (userError || !user?.email) return Response.json({ error: "Unauthorized" }, { status: 401, headers: cors });
+  const { data: settingsRows } = await client.rpc("get_orcamovel_settings");
+  const settings = Array.isArray(settingsRows) ? settingsRows[0] : settingsRows;
+  const promotionActive = settings?.promotion_ends_at && Date.now() <= new Date(settings.promotion_ends_at).getTime();
+  const plans = {
+    monthly: { title: "OrçaMóvel Mensal", price: Number(settings?.monthly_price ?? 9.99) },
+    annual: { title: "OrçaMóvel Anual", price: Number(settings?.annual_price ?? 99.99) },
+    lifetime: { title: "OrçaMóvel Vitalício", price: Number(promotionActive ? settings?.lifetime_promo_price ?? 149.99 : settings?.lifetime_price ?? 249.99) },
+  } as const;
 
   const body = await request.json().catch(() => ({}));
   const plan = body.plan as keyof typeof plans;

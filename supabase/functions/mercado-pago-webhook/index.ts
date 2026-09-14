@@ -1,7 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const lifetimePromotionEndsAt = new Date("2026-09-21T03:59:59.000Z").getTime();
-const plans = { monthly: { prices: [9.99], days: 30 }, annual: { prices: [99.99], days: 365 }, lifetime: { prices: [149.99, 249.99], days: 0 } } as const;
+const planDays = { monthly: 30, annual: 365, lifetime: 0 } as const;
 const planNames = { monthly: "Mensal", annual: "Anual", lifetime: "Vitalício" } as const;
 const appUrl = "https://cortecloud-site-l4lh.vercel.app/apps/moveis";
 const whatsappUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20vi%20seu%20contato%20no%20Or%C3%A7aM%C3%B3vel%20e%20gostaria%20de%20conversar%20sobre%20um%20site%20ou%20aplicativo%20personalizado.";
@@ -51,18 +50,25 @@ Deno.serve(async (request) => {
   if (!paymentResponse.ok) return Response.json({ error: "Payment lookup failed" }, { status: 502 });
   const payment = await paymentResponse.json();
   if (payment.status !== "approved") return Response.json({ received: true });
-  const plan = payment.metadata?.plan as keyof typeof plans;
-  const selected = plans[plan];
+  const plan = payment.metadata?.plan as keyof typeof planDays;
+  
   const userId = String(payment.external_reference || payment.metadata?.user_id || "");
   const amount = Number(payment.transaction_amount);
-  const paidDuringPromotion = new Date(payment.date_created || 0).getTime() <= lifetimePromotionEndsAt;
-  const validPrice = selected?.prices.some((price) => Math.abs(amount - price) <= 0.001)
-    && !(plan === "lifetime" && Math.abs(amount - 149.99) <= 0.001 && !paidDuringPromotion);
-  if (!selected || !/^[0-9a-f-]{36}$/i.test(userId) || payment.currency_id !== "BRL" || !validPrice) {
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+  const { data: settingsRows } = await admin.rpc("get_orcamovel_settings");
+  const settings = Array.isArray(settingsRows) ? settingsRows[0] : settingsRows;
+  const paymentTime = new Date(payment.date_created || 0).getTime();
+  const promotionActive = settings?.promotion_ends_at && paymentTime <= new Date(settings.promotion_ends_at).getTime();
+  const expectedPrices = {
+    monthly: [Number(settings?.monthly_price ?? 9.99)],
+    annual: [Number(settings?.annual_price ?? 99.99)],
+    lifetime: [Number(promotionActive ? settings?.lifetime_promo_price ?? 149.99 : settings?.lifetime_price ?? 249.99)],
+  } as const;
+  const days = planDays[plan];
+  const validPrice = days !== undefined && expectedPrices[plan].some((price) => Math.abs(amount - price) <= 0.001);
+  if (days === undefined || !/^[0-9a-f-]{36}$/i.test(userId) || payment.currency_id !== "BRL" || !validPrice) {
     return Response.json({ error: "Invalid payment" }, { status: 400 });
   }
-
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   const { error: eventError } = await admin.from("payment_events").insert({ payment_id: paymentId, user_id: userId, plan_type: plan, amount, status: payment.status });
   const { data: event } = await admin.from("payment_events").select("confirmation_email_sent_at").eq("payment_id", paymentId).maybeSingle();
   const { data: profile } = await admin.from("profiles").select("email,access_expires_at,last_payment_id").eq("id", userId).single();
@@ -70,7 +76,7 @@ Deno.serve(async (request) => {
   if (eventError && eventError.code !== "23505") return Response.json({ error: "Could not record payment" }, { status: 500 });
   const currentExpiry = profile?.access_expires_at ? new Date(profile.access_expires_at).getTime() : 0;
   const base = Math.max(Date.now(), currentExpiry);
-  const accessExpiresAt = plan === "lifetime" ? null : new Date(base + selected.days * 86_400_000).toISOString();
+  const accessExpiresAt = plan === "lifetime" ? null : new Date(base + days * 86_400_000).toISOString();
   const { error: updateError } = await admin.from("profiles").update({ subscription_status: "active", plan_type: plan, access_expires_at: accessExpiresAt, last_payment_id: paymentId, updated_at: new Date().toISOString() }).eq("id", userId);
   if (updateError) return Response.json({ error: "Could not activate access" }, { status: 500 });
   let email = { sent: false, reason: "No user email" } as { sent: boolean; reason?: string; id?: string };

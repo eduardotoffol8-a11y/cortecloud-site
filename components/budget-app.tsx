@@ -9,6 +9,7 @@ import { BrandMark } from "./brand-mark";
 import { CompanyForm } from "./company-form";
 import { InstallAppButton } from "./install-app-button";
 import { AccountSecurity } from "./account-security";
+import { AdminDashboard } from "./admin-dashboard";
 import { PasskeyCard } from "./passkey-card";
 import { PricingScreen } from "./pricing-screen";
 import { QuoteEditor } from "./quote-editor";
@@ -191,6 +192,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackName, setFeedbackName] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const changeCalculatorPreference = (enabled: boolean) => {
     setCalculatorEnabled(enabled);
@@ -218,39 +220,13 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
     }
   };
 
-  const feedbackMessage = () => [
-    "Avaliação do OrçaMóvel",
-    "",
-    `Nota: ${feedbackRating} de 5`,
-    `Nome: ${feedbackName.trim() || "Não informado"}`,
-    `Conta: ${userEmail}`,
-    "",
-    feedbackText.trim(),
-  ].join("\n");
-
-  const sendFeedback = () => {
-    if (!feedbackText.trim()) {
-      setNotice("Escreva um comentário antes de enviar.");
-      return;
-    }
-    const subject = encodeURIComponent(`Avaliação OrçaMóvel — ${feedbackRating}/5`);
-    const body = encodeURIComponent(feedbackMessage());
-    window.location.href = `mailto:eduardo.toffol8@gmail.com?subject=${subject}&body=${body}`;
-    setFeedbackOpen(false);
-    setNotice("Avaliação preparada. Confirme o envio no seu aplicativo de e-mail.");
-  };
-
-  const copyFeedback = async () => {
-    if (!feedbackText.trim()) {
-      setNotice("Escreva um comentário antes de copiar.");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(feedbackMessage());
-      setNotice("Avaliação copiada.");
-    } catch {
-      setNotice("Não foi possível copiar a avaliação.");
-    }
+  const sendFeedback = async () => {
+    if (!feedbackText.trim()) { setNotice("Escreva um comentário antes de enviar."); return; }
+    if (!supabase) { setNotice("Não foi possível enviar agora."); return; }
+    const { error } = await supabase.from("app_feedback").insert({ user_id: userId, user_email: userEmail, user_name: feedbackName.trim(), rating: feedbackRating, message: feedbackText.trim() });
+    if (error) { setNotice("Não foi possível enviar a avaliação. Tente novamente."); return; }
+    setFeedbackOpen(false); setFeedbackText(""); setFeedbackName(""); setFeedbackRating(5);
+    setNotice("Obrigado! Sua avaliação foi enviada.");
   };
 
   useEffect(() => {
@@ -341,6 +317,14 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   useEffect(() => {
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const key = "orcamovel.analytics.session.v1";
+    const sid = sessionStorage.getItem(key) || crypto.randomUUID();
+    sessionStorage.setItem(key, sid);
+    void supabase.rpc("track_orcamovel_event", { p_event_type: "app_open", p_session_id: sid, p_metadata: { source: "authenticated" } });
+  }, [supabase]);
 
   useEffect(() => {
     const theme = document.querySelector('meta[name="theme-color"]');
@@ -814,6 +798,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <PageHeading eyebrow="Perfil" title="Dados da marcenaria" />
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
       <AccountSecurity email={userEmail} onSignOut={onSignOut} onOpenPlans={() => setShowPlans(true)} />
+      {userEmail.toLowerCase() === "eduardo.toffol8@gmail.com" && <button type="button" onClick={() => setShowAdmin(true)} className="mt-5 flex w-full items-center gap-4 rounded-2xl border border-[#9bbdb6] bg-[#e9f5f2] p-5 text-left transition-colors hover:bg-[#ddf0eb]"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--brand)] text-white"><Settings size={22}/></span><span><span className="block font-extrabold text-[#172321]">Painel mestre</span><span className="mt-1 block text-sm text-[#60736e]">Métricas, avaliações, usuários, preços e promoções.</span></span><ChevronRight className="ml-auto text-[var(--brand)]" size={20}/></button>}
       <div className="app-card mt-5 flex items-center justify-between gap-4 p-4 sm:p-5"><div><p className="font-bold text-[#172321]">Calculadora flutuante</p><p className="mt-1 text-sm leading-5 text-[#74837f]">Deixe a calculadora disponível sobre as telas do aplicativo.</p></div><label className="relative inline-flex shrink-0 cursor-pointer items-center"><input type="checkbox" className="peer sr-only" checked={calculatorEnabled} onChange={(event) => changeCalculatorPreference(event.target.checked)} /><span className="h-7 w-12 rounded-full bg-[#cbd6d3] transition-colors peer-checked:bg-[var(--brand)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--brand)] after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5" /></label></div>
       <div className="mt-5 overflow-hidden rounded-2xl border border-[#dfc98e] bg-gradient-to-br from-[#fffaf0] via-[#fffdf8] to-[#f4ead1] p-5 shadow-sm sm:p-6">
         <div className="flex items-start gap-4">
@@ -843,6 +828,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   }, [startNewQuote]);
 
   if (!hydrated) return <div className="grid min-h-screen place-items-center"><BrandMark loading /></div>;
+  if (showAdmin && userEmail.toLowerCase() === "eduardo.toffol8@gmail.com") return <AdminDashboard onBack={() => setShowAdmin(false)} />;
   if (showPlans) return <PricingScreen email={userEmail} onSignOut={onSignOut} onRefresh={() => window.location.reload()} onBack={() => setShowPlans(false)} trialEnded={false} />;
   if (onboarding) return (
     <main className="min-h-screen bg-[#f2f6f5] px-4 py-7 sm:px-6" style={companyTheme(company)}>
@@ -875,10 +861,10 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
             <fieldset className="mt-5"><legend className="field-label">Qual é sua nota?</legend><div className="mt-2 flex gap-1" aria-label={`Nota ${feedbackRating} de 5`}>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" onClick={() => setFeedbackRating(rating)} className="grid h-11 w-11 place-items-center rounded-xl transition-colors hover:bg-[#fff6df]" aria-label={`${rating} ${rating === 1 ? "estrela" : "estrelas"}`}><Star size={26} className={rating <= feedbackRating ? "text-[#b5914e]" : "text-[#cbd4d1]"} fill={rating <= feedbackRating ? "currentColor" : "none"} /></button>)}</div></fieldset>
             <label className="mt-4 block"><span className="field-label">Seu nome</span><input className="field-input" value={feedbackName} onChange={(event) => setFeedbackName(event.target.value)} placeholder="Como quer aparecer no site?" autoComplete="name" /></label>
             <label className="mt-4 block"><span className="field-label">Sua experiência</span><textarea className="field-input min-h-32 resize-y" value={feedbackText} onChange={(event) => setFeedbackText(event.target.value)} placeholder="O que você mais gostou? O que o OrçaMóvel facilitou no seu trabalho?" maxLength={700} /></label>
-            <p className="mt-2 text-xs leading-5 text-[#82908d]">Ao enviar, seu aplicativo de e-mail será aberto com a avaliação pronta. Basta confirmar o envio.</p>
+            <p className="mt-2 text-xs leading-5 text-[#82908d]">A avaliação será enviada diretamente para a equipe do OrçaMóvel e poderá aparecer no site após aprovação.</p>
             <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => void copyFeedback()} className="quiet-button"><Mail size={17} />Copiar avaliação</button>
-              <button type="button" onClick={sendFeedback} className="primary-button"><Mail size={17} />Enviar avaliação</button>
+              <button type="button" onClick={() => setFeedbackOpen(false)} className="quiet-button">Cancelar</button>
+              <button type="button" onClick={() => void sendFeedback()} className="primary-button"><Mail size={17} />Enviar avaliação</button>
             </div>
           </div>
         </div>
