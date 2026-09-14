@@ -184,4 +184,22 @@ button { -webkit-tap-highlight-color: transparent; }
   .install-pill { width: 2.35rem; justify-content: center; padding: 0; }
 }
 
+/* App store hero: use the approved premium marcenaria scene instead of the illustrative SVG. */
+div[class*="min-h-[27rem]"][class*="bg-[#eee4d6]"] {
+  background:
+    linear-gradient(180deg, rgba(17, 35, 31, 0.04), rgba(17, 35, 31, 0.20)),
+    url('/orcamovel/store/orcamovel-marcenaria-premium.jpg') center center / cover no-repeat !important;
+}
+
+div[class*="min-h-[27rem]"][class*="bg-[#eee4d6]"] > svg {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  div[class*="min-h-[27rem]"][class*="bg-[#eee4d6]"] {
+    min-height: 24rem !important;
+    background-position: 52% center !important;
+  }
+}
+
 @media print { .app-bottom-nav { display: none !important; } body { background: white; } .content-safe { margin: 0 !important; max-width: none !important; padding: 0 !important; } }
