@@ -20,7 +20,7 @@ export interface FurnitureItem {
 
 export interface ClosingInfo {
   paymentMethod: string; paymentTerms: string; deliveryTime: string; warranty: string; validityDays: string;
-  discount: string; notes: string; exclusions: string; measurementIncluded: boolean; deliveryIncluded: boolean;
+  projectDescription: string; discount: string; notes: string; exclusions: string; measurementIncluded: boolean; deliveryIncluded: boolean;
   installationIncluded: boolean; showItemPrices: boolean; status: QuoteStatus;
 }
 
@@ -34,7 +34,7 @@ export interface ProjectAttachment {
 }
 
 export interface Quote {
-  id: string; clientId: string; number: string; createdAt: string; updatedAt: string; pdfGeneratedAt?: string; pdfStoragePath?: string;
+  id: string; clientId: string; number: string; createdAt: string; updatedAt: string; revision?: number; pdfGeneratedAt?: string; pdfStoragePath?: string;
   pdfBrandSignature?: string;
   client: ClientInfo; furniture: FurnitureItem[]; closing: ClosingInfo; attachments?: ProjectAttachment[];
 }
