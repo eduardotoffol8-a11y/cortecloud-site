@@ -29,7 +29,7 @@ export const productCatalog: ProductDefinition[] = [
     description: "Orçamentos organizados por serviços, materiais, etapas e metragem.",
     audience: "Pedreiros, mestres de obra e construtores",
     href: "/apps/obra-civil",
-    status: "coming-soon",
+    status: "available",
   },
   {
     id: "hidraulica",

@@ -5,17 +5,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
 import { BudgetApp } from "./budget-app";
+import { ConstructionBudgetApp } from "./construction-budget-app";
 import { InstallAppButton } from "./install-app-button";
 import { PlanNudge } from "./plan-nudge";
 import { PricingScreen } from "./pricing-screen";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { AccountProfile } from "@/lib/types";
 
-function LoadingScreen() {
-  return <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-6"><div className="text-center"><div className="mx-auto mb-4 w-fit"><BrandMark loading /></div><LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={24} /></div></main>;
+function LoadingScreen({ product }: { product: "moveis" | "obra" }) {
+  return <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-6"><div className="text-center"><div className="mx-auto mb-4 w-fit"><BrandMark loading product={product} /></div><LoaderCircle className="mx-auto animate-spin text-[var(--brand)]" size={24} /></div></main>;
 }
 
-function AuthScreen() {
+function AuthScreen({ product }: { product: "moveis" | "obra" }) {
+  const productName = product === "obra" ? "OrçaObra" : "OrçaMóvel";
   const supabase = getSupabaseBrowserClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,9 +64,9 @@ function AuthScreen() {
           </div>
         </aside>
         <div className="mx-auto w-full max-w-md lg:max-w-none">
-          <div className="mb-7 flex justify-center lg:justify-start"><BrandMark /></div>
+          <div className="mb-7 flex justify-center lg:justify-start"><BrandMark product={product} /></div>
           <section className="app-card overflow-hidden">
-            <div className="bg-[var(--brand-dark)] px-6 py-6 text-white"><div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/12"><ShieldCheck size={23} /></div><h2 className="text-2xl font-extrabold tracking-[-0.035em]">Entre no OrçaMóvel</h2><p className="mt-1.5 text-sm leading-6 text-[#c8e2de]">Acesse com sua conta Google no computador, celular ou tablet.</p></div>
+            <div className="bg-[var(--brand-dark)] px-6 py-6 text-white"><div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/12"><ShieldCheck size={23} /></div><h2 className="text-2xl font-extrabold tracking-[-0.035em]">Entre no {productName}</h2><p className="mt-1.5 text-sm leading-6 text-[#c8e2de]">Acesse com sua conta Google no computador, celular ou tablet.</p></div>
             <div className="space-y-4 p-5 sm:p-6">
               <button type="button" onClick={() => void signInWithGoogle()} disabled={Boolean(loading)} className="primary-button w-full">{loading === "google" ? <LoaderCircle className="animate-spin" size={18} /> : <span className="grid h-5 w-5 place-items-center rounded-full bg-white text-xs font-black text-[#4285F4]">G</span>}{loading === "google" ? "Abrindo Google…" : "Continuar com Google"}</button>
               <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-[#8a9894]"><span className="h-px flex-1 bg-[#dfe7e5]" />ou neste dispositivo<span className="h-px flex-1 bg-[#dfe7e5]" /></div>
@@ -80,7 +82,7 @@ function AuthScreen() {
   );
 }
 
-export function AuthShell() {
+export function AuthShell({ product = "moveis" }: { product?: "moveis" | "obra" }) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [now, setNow] = useState(() => Date.now());
   const [session, setSession] = useState<Session | null>(null);
@@ -127,13 +129,13 @@ export function AuthShell() {
   }, [refreshCurrentProfile, supabase]);
 
   const signOut = async () => { await supabase?.auth.signOut(); };
-  if (loading) return <LoadingScreen />;
-  if (!session) return <AuthScreen />;
+  if (loading) return <LoadingScreen product={product} />;
+  if (!session) return <AuthScreen product={product} />;
   if (!profile) return <main className="grid min-h-screen place-items-center bg-[#f2f6f5] p-5"><section className="app-card w-full max-w-md p-6 text-center"><h1 className="text-xl font-extrabold">Não foi possível confirmar seu acesso</h1><p className="mt-2 text-sm leading-6 text-[#657570]">Verifique a internet e tente novamente. Seus dados continuam seguros.</p><button onClick={() => { setLoading(true); void loadProfile(session); }} className="primary-button mt-5 w-full"><RefreshCw size={17} />Tentar novamente</button><button onClick={() => void signOut()} className="quiet-button mt-2 w-full">Sair da conta</button></section></main>;
 
   const paidAccess = profile.subscriptionStatus === "active" && (profile.planType === "lifetime" || !profile.accessExpiresAt || new Date(profile.accessExpiresAt).getTime() > now);
   const expired = !paidAccess && new Date(profile.trialEndsAt).getTime() <= now;
   if (expired) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} />;
   if (showPlans) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} onBack={() => setShowPlans(false)} trialEnded={false} />;
-  return <><BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} /><PlanNudge userId={session.user.id} profile={profile} onOpenPlans={() => setShowPlans(true)} /></>;
+  return <>{product === "obra" ? <ConstructionBudgetApp userId={session.user.id} profile={profile} onSignOut={signOut} /> : <BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} />}<PlanNudge userId={session.user.id} profile={profile} onOpenPlans={() => setShowPlans(true)} /></>;
 }
