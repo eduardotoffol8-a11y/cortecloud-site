@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, PlayCircle, Send, UsersRound, Volume2 } from "lucide-react";
 import { InstallAppButton } from "@/components/install-app-button";
 import { LandingAnalytics } from "@/components/landing-analytics";
+import { PublicTestimonials } from "@/components/public-testimonials";
 import styles from "./presentation.module.css";
 import videoStyles from "./video.module.css";
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 const assets = "/orcamovel/apresentacao";
-const demoVideoUrl = "https://drive.google.com/uc?export=download&id=1ck_V9DzEomhS-37jrTraAN7X1H-xDvYz";
+const demoVideoUrl = "/api/orcamovel-demo";
 const customProjectUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20conheci%20seu%20trabalho%20pelo%20Or%C3%A7aM%C3%B3vel%20e%20gostaria%20de%20conversar%20sobre%20um%20site%20ou%20aplicativo%20personalizado%20para%20minha%20empresa.";
 const screenshots = [
   { file: "painel.jpg", title: "Seu negócio em uma tela", description: "Clientes, pendências e PDFs em uma visão geral." },
@@ -110,6 +111,8 @@ export default function MoveisPresentationPage() {
             </div>
           </div>
         </section>
+
+        <PublicTestimonials />
 
         <section className={`${styles.container} ${styles.benefits}`} aria-label="Benefícios do OrçaMóvel">
           {benefits.map(({ icon: Icon, title, text }) => <article key={title}><Icon size={25} aria-hidden="true" /><h2>{title}</h2><p>{text}</p></article>)}
