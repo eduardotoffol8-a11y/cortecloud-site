@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, Star, UsersRound } from "lucide-react";
+import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, Send, UsersRound } from "lucide-react";
+import { InstallAppButton } from "@/components/install-app-button";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
@@ -14,16 +15,15 @@ const customProjectUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20conheci
 const screenshots = [
   { file: "painel.jpg", title: "Seu negócio em uma tela", description: "Clientes, pendências e PDFs em uma visão geral." },
   { file: "orcamentos.jpg", title: "Orçamentos organizados", description: "Consulte propostas e atualize seus status." },
-  { file: "pdfs.jpg", title: "Seus PDFs à mão", description: "Encontre, abra e baixe os arquivos gerados." },
-  { file: "ajustes.jpg", title: "Tudo no seu lugar", description: "Acesse os dados da marcenaria e seu plano." },
-  { file: "marca.jpg", title: "Com a sua identidade", description: "Escolha as cores que aparecem nos seus PDFs." },
+  { file: "pdfs.jpg", title: "Seus PDFs à mão", description: "Encontre, visualize e compartilhe as propostas arquivadas." },
+  { file: "ajustes.jpg", title: "Tudo no seu lugar", description: "Configure sua empresa, instalação e acesso ao plano." },
+  { file: "marca.jpg", title: "Com a sua identidade", description: "Use nome, frase, logo e cores da sua marcenaria nos PDFs." },
 ];
-const reviews = [
-  { name: "Carlos Mendes", profile: "Marceneiro autônomo", title: "Praticidade no dia a dia", text: "O que mais gostei foi a praticidade. Em poucos minutos consegui cadastrar o cliente, montar o orçamento e gerar um PDF muito mais apresentável." },
-  { name: "Juliano Ribeiro", profile: "Dono de marcenaria", title: "Um PDF profissional", text: "O PDF ficou com aparência profissional de verdade. Para quem trabalha com móveis sob medida, isso passa muito mais confiança para o cliente." },
-  { name: "Rafael Costa", profile: "Marceneiro e montador", title: "Simples de usar", text: "Gostei porque o sistema é direto. Não fica cheio de coisa desnecessária. Dá para usar no celular sem complicação e organizar os orçamentos com facilidade." },
-  { name: "André Ferreira", profile: "Pequena marcenaria", title: "A marca da minha marcenaria", text: "A parte de personalizar a marca é um diferencial muito bom. As cores e o layout deixam a proposta mais bonita e valorizam o meu trabalho." },
-  { name: "Diego Martins", profile: "Profissional de móveis planejados", title: "Tudo mais organizado", text: "Para quem fazia tudo no improviso, o OrçaMóvel ajuda bastante. Cliente, orçamento e PDF ficam no mesmo lugar, o que economiza tempo e evita retrabalho." },
+const useCases = [
+  { title: "Orçamento feito na visita", text: "Cadastre o cliente e comece a proposta ainda no local da medição, usando o celular." },
+  { title: "Revisões sem perder a organização", text: "Atualize o projeto e mantenha o PDF revisado arquivado na pasta do cliente." },
+  { title: "Proposta pronta para enviar", text: "Abra o PDF dentro do OrçaMóvel e compartilhe pelo WhatsApp, e-mail ou outro aplicativo." },
+  { title: "Sua marcenaria em destaque", text: "Apresente nome, logo, cores, materiais, condições e valores em um documento profissional." },
 ];
 const benefits = [
   { icon: Monitor, title: "Celular e computador", text: "Use a mesma conta no navegador ou instale o OrçaMóvel no seu dispositivo." },
@@ -38,16 +38,11 @@ const faq = [
   ["Posso colocar a marca da minha marcenaria?", "Sim. Nos ajustes, você pode configurar os dados da empresa, a logo e as cores usadas nos PDFs."],
   ["Como funcionam os 30 dias grátis?", "Você pode experimentar o aplicativo por 30 dias, sem cartão. A data de término aparece na área de ajustes do seu plano."],
   ["Existe cobrança automática depois do teste?", "Não. Os planos atuais têm pagamento avulso. Você escolhe um plano no aplicativo para continuar após o período grátis, sem renovação automática."],
-  ["Como envio o orçamento para meu cliente?", "Gere o PDF no aplicativo, abra ou baixe o arquivo e compartilhe pelo canal que você já usa com seu cliente."],
+  ["Como envio o orçamento para meu cliente?", "Gere o PDF, abra dentro do OrçaMóvel e toque em “Enviar proposta” para escolher WhatsApp, e-mail ou outro aplicativo."],
 ];
 
-function ReviewerMonogram({ name }: { name: string }) {
-  const initials = name.split(" ").slice(0, 2).map(part => part[0]).join("");
-  return <span className={styles.avatar} aria-hidden="true">{initials}</span>;
-}
-
 function TrialLink({ light = false }: { light?: boolean }) {
-  return <Link href="/apps/moveis" className={`${styles.button} ${light ? styles.lightButton : ""}`}>Testar grátis por 30 dias <ArrowRight size={18} aria-hidden="true" /></Link>;
+  return <Link href="/apps/moveis" className={`${styles.button} ${light ? styles.lightButton : ""}`}>Criar conta e testar grátis <ArrowRight size={18} aria-hidden="true" /></Link>;
 }
 
 export default function MoveisPresentationPage() {
@@ -56,25 +51,26 @@ export default function MoveisPresentationPage() {
       <a href="#conteudo" className={styles.skip}>Pular para o conteúdo</a>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          <Link href="/apps" className={styles.brand} aria-label="OrçaMóvel - voltar à central de aplicativos">
+          <Link href="/" className={styles.brand} aria-label="OrçaMóvel - página inicial">
             <Image src="/orcamovel-brand-192.png" width={44} height={44} alt="" />
             <span>OrçaMóvel<small>Marcenaria sob medida</small></span>
           </Link>
           <nav aria-label="Navegação principal" className={styles.nav}>
-            <a href="#galeria" className={styles.desktopLink}>O aplicativo</a>
+            <a href="#como-funciona" className={styles.desktopLink}>Como funciona</a>
             <a href="#planos" className={styles.desktopLink}>Planos</a>
-            <Link href="/apps/moveis" className={styles.openApp}>Abrir app <ArrowRight size={16} aria-hidden="true" /></Link>
+            <span className={styles.headerInstall}><InstallAppButton /></span>
+            <Link href="/apps/moveis" className={styles.openApp}>Entrar no app <ArrowRight size={16} aria-hidden="true" /></Link>
           </nav>
         </div>
       </header>
       <main id="conteudo">
         <section className={`${styles.container} ${styles.hero}`}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>DA SUA MARCENARIA PARA O CLIENTE</p>
-            <h1>Faça orçamentos profissionais <span>no celular ou computador.</span></h1>
-            <p className={styles.lead}>Cadastre clientes, monte propostas de móveis sob medida e gere PDFs personalizados com a identidade da sua marcenaria.</p>
-            <div className={styles.actions}><TrialLink /><a href="#galeria" className={styles.textLink}>Veja o aplicativo</a></div>
-            <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> No celular e no PC</p>
+            <p className={styles.eyebrow}>ORÇAMENTOS PROFISSIONAIS PARA MARCENARIA</p>
+            <h1>Organize seus orçamentos e apresente sua marcenaria <span>com mais profissionalismo.</span></h1>
+            <p className={styles.lead}>Do primeiro atendimento ao envio da proposta: cadastre clientes, detalhe cada móvel, organize revisões e gere PDFs com a identidade da sua marcenaria — pelo celular ou computador.</p>
+            <div className={styles.actions}><TrialLink /><span className={styles.installCta}><InstallAppButton /></span><a href="#planos" className={styles.textLink}>Comparar planos</a></div>
+            <p className={styles.reassurance}><Check size={16} aria-hidden="true" />30 dias grátis <span>·</span> Sem cartão <span>·</span> Seus PDFs ficam arquivados</p>
           </div>
           <div className={styles.heroVisual}>
             <div className={styles.visualLabel}>SEU TRABALHO MERECE UMA BOA PROPOSTA.</div>
@@ -112,39 +108,37 @@ export default function MoveisPresentationPage() {
               />
               <p>Exemplo real de demonstração gerado no OrçaMóvel</p>
             </div>
-            <div><p className={styles.eyebrow}>A SUA MARCA EM CADA DETALHE</p><h2>Seu orçamento.<br />A sua identidade.</h2><p className={styles.lead}>Transforme os detalhes do projeto em uma proposta organizada, pronta para apresentar ao cliente.</p>
-              <ul className={styles.checkList}>{["Nome, logo e cores da sua marcenaria", "Móveis, medidas, materiais e acabamentos", "Valores e condições comerciais em um documento", "PDF pronto para baixar e compartilhar"].map(item => <li key={item}><Check size={19} aria-hidden="true" />{item}</li>)}</ul>
+            <div><p className={styles.eyebrow}>A SUA MARCA EM CADA DETALHE</p><h2>Seu orçamento.<br />A sua identidade.</h2><p className={styles.lead}>Entregue ao cliente um documento claro e valorizado, enquanto o arquivo permanece organizado dentro do OrçaMóvel para consultar, revisar e enviar novamente.</p>
+              <ul className={styles.checkList}>{["Nome, logo e cores da sua marcenaria", "Móveis, medidas, materiais e acabamentos", "Valores e condições comerciais em um documento", "PDF arquivado, revisável e pronto para compartilhar"].map(item => <li key={item}><Check size={19} aria-hidden="true" />{item}</li>)}</ul>
               <p style={{ color: "#667970", fontSize: ".86rem", marginBottom: "18px" }}>Este exemplo usa uma identidade em marrom e dourado para mostrar como a proposta pode acompanhar o visual da marcenaria.</p>
               <div className={styles.pdfLinks}>
-                <a className={styles.button} href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer">Ver PDF completo <ArrowRight size={18} aria-hidden="true" /></a>
+                <a className={styles.button} href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer">Ver modelo de proposta <ArrowRight size={18} aria-hidden="true" /></a>
               </div>
             </div>
           </div>
         </section>
 
-        <section className={`${styles.container} ${styles.section}`}>
+        <section id="como-funciona" className={`${styles.container} ${styles.section}`}>
           <p className={styles.eyebrow}>SIMPLES DO INÍCIO AO ENVIO</p><h2>Três passos. Uma proposta profissional.</h2>
           <div className={styles.steps}>{[
             { icon: UsersRound, title: "Cadastre o cliente", text: "Preencha os dados de contato para começar a proposta." },
             { icon: FolderOpen, title: "Monte o orçamento", text: "Adicione os móveis, as medidas, os valores e os detalhes do projeto." },
-            { icon: FileText, title: "Gere e envie o PDF", text: "Crie o documento com a sua marca e compartilhe com o cliente." },
+            { icon: Send, title: "Gere, revise e envie", text: "O PDF fica salvo no OrçaMóvel e pode ser compartilhado direto pelo celular." },
           ].map(({ icon: Icon, title, text }, i) => <article key={title}><div className={styles.stepTop}><span>0{i + 1}</span><Icon size={25} aria-hidden="true" /></div><h3>{title}</h3><p>{text}</p></article>)}</div>
         </section>
 
-        <section className={styles.reviewSection} aria-labelledby="avaliacoes">
-          <div className={styles.container}><p className={styles.eyebrow}>PRIMEIRAS IMPRESSÕES</p><h2 id="avaliacoes">Avaliações iniciais</h2><p className={styles.reviewNote}>Exemplos ilustrativos de feedbacks de teste. Identidades fictícias; não são avaliações públicas verificadas.</p>
-            <div className={styles.reviews} tabIndex={0} role="region" aria-label="Exemplos de feedbacks de teste">
-              {reviews.map(review => <article key={review.name} className={styles.review}>
-                <div className={styles.reviewer}><ReviewerMonogram name={review.name} /><div><h3>{review.name}</h3><p>{review.profile}</p></div></div>
-                <div className={styles.stars} aria-label="5 estrelas ilustrativas">{Array.from({ length: 5 }, (_, i) => <Star key={i} size={16} fill="currentColor" aria-hidden="true" />)}<span>Exemplo de teste</span></div>
-                <h4>{review.title}</h4><blockquote>“{review.text}”</blockquote>
-              </article>)}
+        <section className={styles.reviewSection} aria-labelledby="rotina-real">
+          <div className={styles.container}>
+            <p className={styles.eyebrow}>FEITO PARA A ROTINA DA MARCENARIA</p>
+            <div className={styles.sectionHead}><h2 id="rotina-real">Menos arquivo perdido.<br />Mais clareza para vender.</h2><p>O OrçaMóvel acompanha o trabalho desde a medição até o envio da proposta.</p></div>
+            <div className={styles.useCases}>
+              {useCases.map((item, index) => <article key={item.title}><span>0{index + 1}</span><h3>{item.title}</h3><p>{item.text}</p></article>)}
             </div>
           </div>
         </section>
 
         <section id="planos" className={`${styles.container} ${styles.section}`}>
-          <div className={styles.centerHead}><p className={styles.eyebrow}>COMECE PELO TESTE</p><h2>30 dias para experimentar.<br />Depois, escolha seu plano.</h2><p>Use o OrçaMóvel no dia a dia da sua marcenaria. Sem cartão no teste.</p><TrialLink /></div>
+          <div className={styles.centerHead}><p className={styles.eyebrow}>COMECE PELO TESTE</p><h2>Comece sem risco.<br />Continue no plano que fizer sentido.</h2><p>Teste o fluxo completo por 30 dias, sem cartão. Quando estiver pronto, escolha o período de acesso.</p><TrialLink /></div>
           <div className={styles.plans}>
             <article><p className={styles.planName}>Mensal</p><p className={styles.price}>R$ 9,99</p><p>30 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" className={styles.outlineButton}>Escolher plano mensal <ArrowRight size={17} /></Link></article>
             <article className={styles.featuredPlan}><p className={styles.planName}>Anual</p><p className={styles.price}>R$ 99,99</p><p>365 dias de acesso</p><ul><li><Check size={17} />Todos os recursos</li><li><Check size={17} />Pagamento único por período</li></ul><Link href="/apps/moveis?plans=1" className={styles.button}>Escolher plano anual <ArrowRight size={17} /></Link></article>
@@ -159,9 +153,9 @@ export default function MoveisPresentationPage() {
           <div className={styles.customContact}><a href={customProjectUrl} target="_blank" rel="noopener noreferrer" className={styles.button}><MessageCircle size={19} aria-hidden="true" />Solicitar um projeto personalizado</a><span>WhatsApp +55 15 98162-0985<br /><a href="mailto:eduardo.toffol8@gmail.com">eduardo.toffol8@gmail.com</a></span></div>
         </section>
 
-        <section className={styles.finalCta}><div className={styles.container}><p className={styles.eyebrow}>SEU PRÓXIMO ORÇAMENTO COMEÇA AQUI</p><h2>Capriche nos móveis.<br />E na apresentação também.</h2><p>Leve a identidade da sua marcenaria para cada proposta.</p><TrialLink light /><small>30 dias grátis · Sem cartão</small></div></section>
+        <section className={styles.finalCta}><div className={styles.container}><p className={styles.eyebrow}>SEU PRÓXIMO ORÇAMENTO COMEÇA AQUI</p><h2>Seu próximo orçamento pode<br />parecer tão profissional quanto seu trabalho.</h2><p>Organize clientes, propostas e revisões em um app feito para marcenaria.</p><div className={styles.finalActions}><TrialLink light /><span className={styles.installCta}><InstallAppButton /></span></div><small>30 dias grátis · Sem cartão · Celular e computador</small></div></section>
       </main>
-      <footer className={`${styles.container} ${styles.footer}`}><span>OrçaMóvel · Uma ferramenta da família Orça</span><div><Link href="/apps">Todos os aplicativos</Link><Link href="/apps/moveis">Abrir app</Link></div></footer>
+      <footer className={`${styles.container} ${styles.footer}`}><span>OrçaMóvel · Orçamentos profissionais para marcenaria</span><div><a href="#planos">Planos</a><Link href="/apps/moveis">Entrar no app</Link></div></footer>
     </div>
   );
 }
