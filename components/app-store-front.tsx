@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   ArrowRight, BadgeCheck, Boxes, BriefcaseBusiness, Building2, CheckCircle2, Construction,
   Droplets, FileText, FolderOpen, Hammer, LayoutDashboard, Ruler, Search, ShieldCheck,
-  Sparkles, Star, UsersRound, Zap,
+  MessageCircle, Sparkles, Star, UsersRound, Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { productCatalog, type ProductDefinition, type ProductId } from "@/lib/product-catalog";
@@ -19,6 +19,7 @@ const appVisuals: Record<ProductId, { icon: typeof Hammer; category: string; lab
 };
 
 const filters = ["Todos", "Marcenaria", "Construção", "Instalações", "Acabamentos"];
+const customProjectUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20conheci%20a%20central%20Aplicativos%20Or%C3%A7a%20e%20gostaria%20de%20conversar%20sobre%20um%20site%20ou%20aplicativo%20personalizado%20para%20minha%20empresa.";
 
 function StoreHeader() {
   return (
@@ -251,6 +252,12 @@ export function AppStoreFront() {
               <p className="mt-5 text-sm leading-6 text-white/75">Clientes, dados da empresa e segurança podem ser compartilhados. Cada aplicativo mantém sua própria licença, período de teste e ferramentas especializadas.</p>
               <div className="mt-6 grid grid-cols-2 gap-2 text-sm font-bold"><span className="rounded-xl bg-white/8 px-3 py-3">Conta única</span><span className="rounded-xl bg-white/8 px-3 py-3">Apps independentes</span><span className="rounded-xl bg-white/8 px-3 py-3">Dados organizados</span><span className="rounded-xl bg-white/8 px-3 py-3">Pagamentos por app</span></div>
             </article>
+          </div>
+        </section>
+        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16">
+          <div className="grid gap-7 rounded-[1.8rem] border border-[#d7e3df] bg-[linear-gradient(135deg,#f0f7f5,#fff9ef)] p-6 sm:p-9 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
+            <div><p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[var(--brand)]">Projeto personalizado</p><h2 className="mt-2 text-2xl font-extrabold tracking-[-0.04em] text-[#172321] sm:text-3xl">Precisa de um site ou aplicativo para sua empresa?</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#687875]">Criamos uma solução sob medida para sua marca, seu atendimento e sua forma de trabalhar.</p></div>
+            <div className="flex flex-col items-start gap-3"><a href={customProjectUrl} target="_blank" rel="noopener noreferrer" className="primary-button w-full sm:w-auto"><MessageCircle size={18} />Conversar sobre meu projeto</a><p className="text-xs leading-5 text-[#73817e]">WhatsApp +55 15 98162-0985<br /><a className="font-semibold text-[var(--brand)] underline underline-offset-2" href="mailto:eduardo.toffol8@gmail.com">eduardo.toffol8@gmail.com</a></p></div>
           </div>
         </section>
       </main>
