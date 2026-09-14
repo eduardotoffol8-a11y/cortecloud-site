@@ -72,7 +72,7 @@ function WoodworkingLifestyleScene() {
           fill
           priority
           sizes="(min-width: 1024px) 55vw, 100vw"
-          className="hidden object-cover object-center md:block"
+          className="z-[1] hidden object-cover object-center md:block"
           onError={() => setDesktopImageFailed(true)}
         />
       )}
@@ -83,11 +83,11 @@ function WoodworkingLifestyleScene() {
           fill
           priority
           sizes="(max-width: 767px) 100vw, 1px"
-          className="object-cover object-[center_46%] md:hidden"
+          className="z-[1] object-cover object-[center_46%] md:hidden"
           onError={() => setMobileImageFailed(true)}
         />
       )}
-      <svg viewBox="0 0 760 520" className="absolute inset-0 h-full w-full" role="img" aria-label="Ambiente elegante com móvel planejado em madeira e uma cliente feliz com o resultado" preserveAspectRatio="xMidYMid slice">
+      <svg viewBox="0 0 760 520" className="absolute inset-0 z-0 h-full w-full" role="img" aria-label="Ambiente elegante com móvel planejado em madeira e uma cliente feliz com o resultado" preserveAspectRatio="xMidYMid slice">
         <defs>
           <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f7f2ea" /><stop offset="1" stopColor="#e3d5c2" /></linearGradient>
           <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9b663f" /><stop offset="1" stopColor="#6f4329" /></linearGradient>
