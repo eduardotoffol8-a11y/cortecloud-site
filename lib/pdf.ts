@@ -52,15 +52,6 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
     doc.setCharSpace(0);
   };
 
-  const sectionTitle = (label: string, followingSpace = 8) => {
-    ensureSpace(8 + followingSpace);
-    doc.setFillColor(...gold);
-    doc.roundedRect(margin, y - 2.7, 1.8, 6.2, 0.8, 0.8, "F");
-    textStyle(emerald, 9.8, "bold");
-    doc.text(label.toUpperCase(), margin + 5.5, y + 1.2);
-    y += 8;
-  };
-
   const continuationHeader = () => {
     doc.setFillColor(...emerald); doc.rect(0, 0, pageWidth, 16, "F");
     doc.setFillColor(...gold); doc.rect(0, 16, pageWidth, 0.9, "F");
@@ -72,6 +63,15 @@ export async function generateQuotePdf(quote: Quote, company: CompanyInfo, proje
   const ensureSpace = (needed: number) => {
     if (y + needed <= footerLimit) return;
     doc.addPage(); continuationHeader();
+  };
+
+  const sectionTitle = (label: string, followingSpace = 8) => {
+    ensureSpace(8 + followingSpace);
+    doc.setFillColor(...gold);
+    doc.roundedRect(margin, y - 2.7, 1.8, 6.2, 0.8, 0.8, "F");
+    textStyle(emerald, 9.8, "bold");
+    doc.text(label.toUpperCase(), margin + 5.5, y + 1.2);
+    y += 8;
   };
 
   // Premium letterhead with a larger logo area and more breathing room.
