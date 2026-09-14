@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const source = "https://drive.google.com/uc?export=download&id=1ck_V9DzEomhS-37jrTraAN7X1H-xDvYz";
+const source = "https://drive.usercontent.google.com/download?id=1ck_V9DzEomhS-37jrTraAN7X1H-xDvYz&export=download&confirm=t";
 
 export async function GET(request: NextRequest) {
   const range = request.headers.get("range");
