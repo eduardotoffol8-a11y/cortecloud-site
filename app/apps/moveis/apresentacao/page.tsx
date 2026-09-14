@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, FileText, FolderOpen, Monitor, Palette, Star, UsersRound } from "lucide-react";
+import { ArrowRight, Check, FileText, FolderOpen, MessageCircle, Monitor, Palette, Star, UsersRound } from "lucide-react";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 const assets = "/orcamovel/apresentacao";
+const customProjectUrl = "https://wa.me/5515981620985?text=Ol%C3%A1%2C%20conheci%20seu%20trabalho%20pelo%20Or%C3%A7aM%C3%B3vel%20e%20gostaria%20de%20conversar%20sobre%20um%20site%20ou%20aplicativo%20personalizado%20para%20minha%20empresa.";
 const screenshots = [
   { file: "painel.jpg", title: "Seu negócio em uma tela", description: "Clientes, pendências e PDFs em uma visão geral." },
   { file: "orcamentos.jpg", title: "Orçamentos organizados", description: "Consulte propostas e atualize seus status." },
@@ -152,6 +153,11 @@ export default function MoveisPresentationPage() {
         </section>
 
         <section className={`${styles.container} ${styles.faq}`}><div><p className={styles.eyebrow}>ANTES DE COMEÇAR</p><h2>Ficou alguma dúvida?</h2></div><div>{faq.map(([question, answer]) => <details key={question}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+
+        <section className={`${styles.container} ${styles.customProject}`} aria-labelledby="projeto-personalizado">
+          <div><p className={styles.eyebrow}>SOLUÇÃO SOB MEDIDA</p><h2 id="projeto-personalizado">Sua empresa também pode ter um sistema próprio.</h2><p>Criamos sites e aplicativos personalizados para organizar processos, apresentar sua marca e facilitar o atendimento aos seus clientes.</p></div>
+          <div className={styles.customContact}><a href={customProjectUrl} target="_blank" rel="noopener noreferrer" className={styles.button}><MessageCircle size={19} aria-hidden="true" />Solicitar um projeto personalizado</a><span>WhatsApp +55 15 98162-0985<br /><a href="mailto:eduardo.toffol8@gmail.com">eduardo.toffol8@gmail.com</a></span></div>
+        </section>
 
         <section className={styles.finalCta}><div className={styles.container}><p className={styles.eyebrow}>SEU PRÓXIMO ORÇAMENTO COMEÇA AQUI</p><h2>Capriche nos móveis.<br />E na apresentação também.</h2><p>Leve a identidade da sua marcenaria para cada proposta.</p><TrialLink light /><small>30 dias grátis · Sem cartão</small></div></section>
       </main>
