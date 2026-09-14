@@ -77,23 +77,31 @@
 .review:nth-child(2n) .avatar { background: #f2e9d9; color: #77592c; }
 .reviewer h3 { font-size: .94rem; }
 .reviewer p { font-size: .75rem; color: #718074; }
-.stars { display: flex; gap: 3px; align-items: center; color: #986811; margin-block: 19px 12px; }
+.stars { display: flex; gap: 3px; align-items: center; color: #f4b400; margin-block: 19px 12px; }
 .stars span { font-size: .75rem; color: #7d887f; margin-left: 7px; }
 .review h4 { font-size: .95rem; font-weight: 750; margin-bottom: 7px; }
 .review blockquote { color: #647368; font-size: .92rem; }
 .centerHead { text-align: center; max-width: 740px; margin-inline: auto; }
 .centerHead > p:not(.eyebrow) { color: #69776c; margin-block: 20px; }
 .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 45px; }
-.plans article { border: 1px solid #dbe5dd; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; }
-.plans .featuredPlan { border-color: #779f86; background: #eff6f0; }
-.planName { font-size: 1.05rem; font-weight: 750; }
-.price { font-size: 2.4rem; font-weight: 800; letter-spacing: -.05em; margin-block: 15px 4px !important; }
-.lifetimePrice { font-size: 1.6rem; line-height: 1.2; font-weight: 750; letter-spacing: -.035em; margin-block: 18px 14px !important; }
-.plans article > p:not(.price):not(.planName):not(.lifetimePrice) { color: #6c7b70; font-size: .875rem; }
+.plans article { border: 1px solid #ded6cf; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; box-shadow: 0 12px 30px rgba(112, 65, 30, .06); }
+.plans article:nth-child(1) { background: #fffdfa; border-color: #d9cec4; }
+.plans article:nth-child(2), .plans .featuredPlan { background: linear-gradient(180deg,#fffdf7,#fff4dc); border-color: #dfa347; box-shadow: 0 16px 34px rgba(189, 119, 28, .11); }
+.plans article:nth-child(3) { background: linear-gradient(180deg,#fff6ec,#ffe9d6); border-color: #e26b31; box-shadow: 0 18px 38px rgba(208, 83, 27, .14); }
+.planName { font-size: 1.05rem; font-weight: 750; color: #634a39; }
+.price { font-size: 2.4rem; font-weight: 800; letter-spacing: -.05em; margin-block: 15px 4px !important; color: #241b16; }
+.lifetimePrice { font-size: 1.6rem; line-height: 1.2; font-weight: 750; letter-spacing: -.035em; margin-block: 18px 14px !important; color: #9e3e16; }
+.plans article > p:not(.price):not(.planName):not(.lifetimePrice) { color: #74665b; font-size: .875rem; }
 .plans ul { list-style: none; padding: 0; margin: 22px 0 25px; flex: 1; font-size: .875rem; }
-.plans li { display: flex; align-items: center; gap: 8px; margin-block: 9px; }
+.plans li { display: flex; align-items: center; gap: 8px; margin-block: 9px; color: #654d3b; }
 .plans svg { flex-shrink: 0; }
-.planNote { text-align: center; color: #6b7c6e; font-size: .8rem; margin-top: 25px !important; }
+.plans article:nth-child(1) .outlineButton { border-color: #8b6a56; color: #6b4a39; }
+.plans article:nth-child(1) .outlineButton:hover { background: #f7f0ea; }
+.plans article:nth-child(2) .button { background: #d97706; border-color: #d97706; color: #fff; box-shadow: 0 9px 22px rgba(217,119,6,.2); }
+.plans article:nth-child(2) .button:hover { background: #b95f05; }
+.plans article:nth-child(3) .outlineButton { border-color: #e4571f; color: #c74718; background: #fffaf5; }
+.plans article:nth-child(3) .outlineButton:hover { background: #fff0e4; }
+.planNote { text-align: center; color: #6b625c; font-size: .8rem; margin-top: 25px !important; }
 .faq { display: grid; grid-template-columns: .85fr 1.15fr; gap: 70px; padding-block: 10px 90px; }
 .faq details { border-bottom: 1px solid #dce5dd; }
 .faq summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 20px; font-weight: 650; }
