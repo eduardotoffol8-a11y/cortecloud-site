@@ -12,6 +12,7 @@ import { AccountSecurity } from "./account-security";
 import { PasskeyCard } from "./passkey-card";
 import { PricingScreen } from "./pricing-screen";
 import { QuoteEditor } from "./quote-editor";
+import { FloatingCalculator } from "./floating-calculator";
 import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, QuoteStatus, RegisteredClient } from "@/lib/types";
 import { brl, createEmptyQuote, emptyCompany, nextQuoteNumber, quoteTotal, statusLabel } from "@/lib/quote";
 import { generateQuotePdf, type PdfProjectDocument, type PdfProjectImage } from "@/lib/pdf";
@@ -60,6 +61,13 @@ function isQuoteStarted(quote: Quote) {
     || quote.client.address.trim()
     || quote.furniture.some((item) => item.name.trim() || item.environment.trim() || item.unitPrice.trim() || item.width.trim() || item.height.trim() || item.depth.trim() || item.extras.trim()),
   );
+}
+
+function hasUnsavedQuoteChanges(quote: Quote, history: Quote[]) {
+  if (!isQuoteStarted(quote)) return false;
+  const saved = history.find((item) => item.id === quote.id);
+  if (!saved) return true;
+  return JSON.stringify({ client: quote.client, furniture: quote.furniture, closing: quote.closing, attachments: quote.attachments || [] }) !== JSON.stringify({ client: saved.client, furniture: saved.furniture, closing: saved.closing, attachments: saved.attachments || [] });
 }
 
 function isUuid(value?: string) {
@@ -162,6 +170,13 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   const [showPlans, setShowPlans] = useState(false);
   const [quoteStartMode, setQuoteStartMode] = useState<"choose" | "existing" | null>(null);
   const [quoteClientSearch, setQuoteClientSearch] = useState("");
+  const [calculatorEnabled, setCalculatorEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("orcamovel.floating-calculator.v1") !== "false");
+
+  const changeCalculatorPreference = (enabled: boolean) => {
+    setCalculatorEnabled(enabled);
+    localStorage.setItem("orcamovel.floating-calculator.v1", String(enabled));
+    setNotice(enabled ? "Calculadora flutuante ativada." : "Calculadora flutuante ocultada.");
+  };
 
   useEffect(() => {
     let active = true;
@@ -300,12 +315,12 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   }, [clients, company, history, hydrated, persistClient, persistQuote, supabase, userId]);
 
   const startNewQuote = useCallback(() => {
-    if (isQuoteStarted(quote) && !window.confirm("Iniciar um novo orçamento? O rascunho atual será substituído.")) return;
+    if (hasUnsavedQuoteChanges(quote, history) && !window.confirm("Iniciar um novo orçamento? As alterações ainda não salvas serão substituídas.")) return;
     setView("quote");
     setSelectedClientId(null);
     setQuoteClientSearch("");
     setQuoteStartMode("choose");
-  }, [quote]);
+  }, [history, quote]);
 
   const beginQuoteForClient = useCallback((client?: RegisteredClient) => {
     const next = createEmptyQuote(nextQuoteNumber(history));
@@ -321,9 +336,9 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
   }, [history]);
 
   const startProjectForClient = useCallback((client: RegisteredClient) => {
-    if (isQuoteStarted(quote) && !window.confirm("Iniciar um novo projeto? O rascunho atual será substituído.")) return;
+    if (hasUnsavedQuoteChanges(quote, history) && !window.confirm("Iniciar um novo projeto? As alterações ainda não salvas serão substituídas.")) return;
     beginQuoteForClient(client);
-  }, [beginQuoteForClient, quote]);
+  }, [beginQuoteForClient, history, quote]);
 
   const beginClientRegistration = () => {
     const timestamp = new Date().toISOString();
@@ -674,6 +689,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <PageHeading eyebrow="Perfil" title="Dados da marcenaria" />
       <CompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
       <AccountSecurity email={userEmail} onSignOut={onSignOut} onOpenPlans={() => setShowPlans(true)} />
+      <div className="app-card mt-5 flex items-center justify-between gap-4 p-4 sm:p-5"><div><p className="font-bold text-[#172321]">Calculadora flutuante</p><p className="mt-1 text-sm leading-5 text-[#74837f]">Deixe a calculadora disponível sobre as telas do aplicativo.</p></div><label className="relative inline-flex shrink-0 cursor-pointer items-center"><input type="checkbox" className="peer sr-only" checked={calculatorEnabled} onChange={(event) => changeCalculatorPreference(event.target.checked)} /><span className="h-7 w-12 rounded-full bg-[#cbd6d3] transition-colors peer-checked:bg-[var(--brand)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--brand)] after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5" /></label></div>
     </section>
   );
 
@@ -709,6 +725,7 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
       <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#f1f6f4] px-3 py-1.5 text-xs font-bold text-[#64746f] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton companyLogo={company.logo} onRequestLogo={() => setView("settings")} /></div></div></header>
       <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">{view === "quote" ? quoteStartMode ? <QuoteClientPicker mode={quoteStartMode} clients={quoteClients} search={quoteClientSearch} onSearch={setQuoteClientSearch} onChooseExisting={() => setQuoteStartMode("existing")} onChooseNew={() => beginQuoteForClient()} onSelect={(client) => beginQuoteForClient(client)} onBack={() => quoteStartMode === "existing" ? (setQuoteClientSearch(""), setQuoteStartMode("choose")) : (setQuoteStartMode(null), setView("dashboard"))} /> : <QuoteEditor quote={quote} onChange={setQuote} onSave={() => void saveQuote()} onGenerate={() => void handleGeneratePdf()} isGenerating={isGenerating} onUpload={(files) => void uploadProjectFiles(files)} onDownloadAttachment={(attachment) => void downloadAttachment(attachment)} onRemoveAttachment={(attachment) => void removeAttachment(attachment)} onSetAttachmentIncluded={(attachment, included) => void setAttachmentIncluded(attachment, included)} isUploading={isUploading} /> : views[view]()}</main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? startNewQuote() : (setSearch(""), setSelectedClientId(null), setClientDraft(null), setQuoteStartMode(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
+      {calculatorEnabled && view !== "settings" ? <FloatingCalculator /> : null}
       {notice && <Notice text={notice} />}
     </div>
   );
