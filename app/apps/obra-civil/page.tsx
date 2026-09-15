@@ -1,4 +1,4 @@
-import { AuthShell } from "@/components/auth-shell";
+import { ConstructionAuthShell } from "@/components/construction-auth-shell";
 
 export const metadata = {
   title: "OrçaObra | Orçamentos profissionais para construção",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function ObraCivilAppPage() {
-  return <AuthShell product="obra" />;
+  return <ConstructionAuthShell />;
 }
