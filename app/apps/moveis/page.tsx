@@ -1,4 +1,5 @@
 import { AuthShell } from "@/components/auth-shell";
+import { AppAnalytics } from "@/components/app-analytics";
 
 export const metadata = {
   title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
@@ -11,5 +12,5 @@ export const metadata = {
 };
 
 export default function MoveisAppPage() {
-  return <AuthShell />;
+  return <><AppAnalytics /><AuthShell /></>;
 }
