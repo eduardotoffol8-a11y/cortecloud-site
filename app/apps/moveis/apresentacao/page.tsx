@@ -140,7 +140,7 @@ export default function MoveisPresentationPage() {
             <div className={styles.paperWrap}>
               <iframe
                 className={styles.paper}
-                src={`${assets}/ORC-2026-001-exemplo-marrom.pdf#page=1&view=FitH`}
+                src={`${assets}/ORC-2026-004-modelo.pdf#page=1&view=FitH`}
                 title="Prévia do orçamento de demonstração gerado pelo OrçaMóvel"
                 loading="lazy"
                 style={{ aspectRatio: "210 / 297", minHeight: "560px", background: "white" }}
@@ -151,7 +151,8 @@ export default function MoveisPresentationPage() {
               <ul className={styles.checkList}>{["Nome, logo e cores da sua marcenaria", "Móveis, medidas, materiais e acabamentos", "Valores e condições comerciais em um documento", "PDF arquivado, revisável e pronto para compartilhar"].map(item => <li key={item}><Check size={19} aria-hidden="true" />{item}</li>)}</ul>
               <p style={{ color: "#667970", fontSize: ".86rem", marginBottom: "18px" }}>Este exemplo usa uma identidade em marrom e dourado para mostrar como a proposta pode acompanhar o visual da marcenaria.</p>
               <div className={styles.pdfLinks}>
-                <a className={styles.button} href={`${assets}/ORC-2026-001-exemplo-marrom.pdf`} target="_blank" rel="noopener noreferrer">Ver modelo de proposta <ArrowRight size={18} aria-hidden="true" /></a>
+                <a className={styles.button} href={`${assets}/ORC-2026-004-modelo.pdf`} target="_blank" rel="noopener noreferrer">Abrir modelo de proposta <ArrowRight size={18} aria-hidden="true" /></a>
+                <a className={styles.pdfDownload} href={`${assets}/ORC-2026-004-modelo.pdf`} download="ORC-2026-004-Modelo.pdf">Baixar PDF para celular</a>
               </div>
             </div>
           </div>

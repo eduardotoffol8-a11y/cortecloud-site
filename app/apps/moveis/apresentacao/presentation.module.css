@@ -63,6 +63,7 @@
 .checkList li { display: flex; align-items: flex-start; gap: 10px; margin-block: 13px; color: #3d5d4c; }
 .checkList svg { flex-shrink: 0; margin-top: 4px; }
 .pdfLinks { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.pdfDownload { color: var(--green); font-size: .9rem; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 35px; margin-top: 40px; }
 .steps article { border-top: 1px solid #b4ccbc; padding-top: 20px; }
 .stepTop { display: flex; justify-content: space-between; align-items: center; color: #176647; margin-bottom: 24px; }
@@ -156,6 +157,7 @@
   .gallery { gap: 18px; }
   .pdfSection { padding-block: 48px; }
   .pdfGrid { grid-template-columns: 1fr; gap: 35px; }
+  .paperWrap { display: none; }
   .paperWrap { order: 2; }
   .paper { max-width: 360px; }
   .steps { grid-template-columns: 1fr; gap: 25px; margin-top: 28px; }
