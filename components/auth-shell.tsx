@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
 import { BudgetApp } from "./budget-app";
-import { ConstructionBudgetApp } from "./construction-budget-app";
 import { InstallAppButton } from "./install-app-button";
 import { PlanNudge } from "./plan-nudge";
 import { PricingScreen } from "./pricing-screen";
@@ -29,8 +28,6 @@ function AuthScreen({ product }: { product: "moveis" | "obra" }) {
   const signInWithGoogle = async () => {
     if (!supabase) return;
     setLoading("google"); setError("");
-    // Some OAuth providers return through the configured site URL. Keep the selected
-    // product locally so the root return bridge never sends an OrçaObra login to OrçaMóvel.
     window.localStorage.setItem("orcamento.auth-return", product === "obra" ? "/apps/obra-civil" : "/apps/moveis");
     const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}${window.location.pathname}`, queryParams: { prompt: "select_account" } } });
     if (oauthError) { setError("Não foi possível iniciar o acesso com Google. Tente novamente."); setLoading(""); }
@@ -141,5 +138,5 @@ export function AuthShell({ product = "moveis" }: { product?: "moveis" | "obra" 
   const expired = !paidAccess && new Date(profile.trialEndsAt).getTime() <= now;
   if (expired) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} />;
   if (showPlans) return <PricingScreen email={profile.email} onSignOut={signOut} onRefresh={() => void loadProfile(session)} onBack={() => setShowPlans(false)} trialEnded={false} />;
-  return <>{product === "obra" ? <ConstructionBudgetApp userId={session.user.id} profile={profile} onSignOut={signOut} /> : <BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} />}<PlanNudge userId={session.user.id} profile={profile} onOpenPlans={() => setShowPlans(true)} /></>;
+  return <><BudgetApp userId={session.user.id} userEmail={session.user.email || ""} profile={profile} onSignOut={signOut} /><PlanNudge userId={session.user.id} profile={profile} onOpenPlans={() => setShowPlans(true)} /></>;
 }
