@@ -10,16 +10,19 @@ import {
   Folder,
   FolderOpen,
   Home,
-  LogOut,
   Plus,
-  Save,
   Search,
   Settings,
   Trash2,
-  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
+import { ConstructionAccountSecurity } from "./construction-account-security";
+import { ConstructionAdminDashboard } from "./construction-admin-dashboard";
+import { ConstructionCompanyForm } from "./construction-company-form";
+import { ConstructionSettingsExtras } from "./construction-settings-extras";
+import { FloatingCalculator } from "./floating-calculator";
+import { InstallAppButton } from "./install-app-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { CompanyInfo, RegisteredClient } from "@/lib/types";
 import { brl } from "@/lib/quote";
@@ -133,6 +136,14 @@ export function ConstructionBudgetApp({
   const [savingCompany, setSavingCompany] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [calculatorEnabled, setCalculatorEnabled] = useState(() => typeof window === "undefined" || localStorage.getItem("orcaobra.floating-calculator.v1") !== "false");
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  const changeCalculatorPreference = (enabled: boolean) => {
+    setCalculatorEnabled(enabled);
+    localStorage.setItem("orcaobra.floating-calculator.v1", String(enabled));
+    setNotice(enabled ? "Calculadora flutuante ativada." : "Calculadora flutuante ocultada.");
+  };
 
   const nextNumber = () =>
     `OBR-${new Date().getFullYear()}-${String(
@@ -358,6 +369,10 @@ export function ConstructionBudgetApp({
     return <main className="grid min-h-screen place-items-center bg-[#fff8f3]"><BrandMark loading product="obra" /></main>;
   }
 
+  if (showAdmin) {
+    return <div className="min-h-screen" style={companyTheme(company)}><ConstructionAdminDashboard onBack={() => setShowAdmin(false)} /></div>;
+  }
+
   const renderDashboard = () => {
     const approved = quotes.filter((item) => item.financial.status === "approved");
     const pending = quotes.filter((item) => item.financial.status === "pending");
@@ -408,44 +423,18 @@ export function ConstructionBudgetApp({
     </section>
   );
 
-  const renderSettings = () => {
-    const activePlan = access.subscription_status === "active" && access.plan_type;
-    return (
-      <section className="view-enter">
-        <PageHeading eyebrow="Perfil" title="Dados da empresa" />
-        <div className="app-card overflow-hidden">
-          <div className="border-b border-[#e3ebe9] px-5 py-4"><h2 className="font-bold">Identidade e aparência</h2><p className="mt-1 text-sm text-[#74837f]">Esses dados aparecem nos PDFs do OrçaObra.</p></div>
-          <div className="grid gap-4 p-5 md:grid-cols-2">
-            <Field label="Nome da empresa"><input className="field-input" value={company.name} onChange={(event) => setCompany({ ...company, name: event.target.value })} placeholder="Sua construtora ou empresa" /></Field>
-            <Field label="Frase da marca"><input className="field-input" value={company.tagline || ""} onChange={(event) => setCompany({ ...company, tagline: event.target.value })} placeholder="Construindo com qualidade e confiança" /></Field>
-            <Field label="CPF/CNPJ"><input className="field-input" value={company.document} onChange={(event) => setCompany({ ...company, document: event.target.value })} /></Field>
-            <Field label="Contato"><input className="field-input" value={company.contact} onChange={(event) => setCompany({ ...company, contact: event.target.value })} /></Field>
-            <Field label="E-mail"><input className="field-input" value={company.email} onChange={(event) => setCompany({ ...company, email: event.target.value })} /></Field>
-            <Field label="Endereço"><input className="field-input" value={company.address} onChange={(event) => setCompany({ ...company, address: event.target.value })} /></Field>
-            <label className="md:col-span-2"><span className="field-label">Logo da empresa</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => handleLogo(event.target.files?.[0])} className="field-input file:mr-3 file:rounded-lg file:border-0 file:bg-[var(--brand-soft)] file:px-3 file:py-2 file:font-bold file:text-[var(--brand)]" /></label>
-            {company.logo && <div className="md:col-span-2"><img src={company.logo} alt="Logo da empresa" className="h-28 max-w-full rounded-2xl border border-[#e3ebe9] bg-white object-contain p-3" /></div>}
-            <Field label="Cor principal"><input type="color" className="h-12 w-full rounded-xl border border-[#d9e3e0] bg-white p-1" value={company.primaryColor} onChange={(event) => setCompany({ ...company, primaryColor: event.target.value })} /></Field>
-            <Field label="Cor secundária"><input type="color" className="h-12 w-full rounded-xl border border-[#d9e3e0] bg-white p-1" value={company.secondaryColor} onChange={(event) => setCompany({ ...company, secondaryColor: event.target.value })} /></Field>
-          </div>
-          <div className="flex justify-end border-t border-[#e3ebe9] p-5"><button disabled={savingCompany} onClick={() => void saveCompany()} className="primary-button w-full sm:w-auto"><Save size={17} />{savingCompany ? "Salvando…" : "Salvar alterações"}</button></div>
-        </div>
-
-        <div className="mt-5 overflow-hidden rounded-2xl border border-[#e6a85a] bg-[linear-gradient(135deg,#fff9ed,#fff0dc)] p-5 shadow-sm sm:p-6">
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#9a571d]">Plano do OrçaObra</p>
-          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 className="text-xl font-extrabold text-[#2d2119]">{activePlan ? `Plano ${access.plan_type === "monthly" ? "Mensal" : access.plan_type === "annual" ? "Anual" : "Vitalício"}` : `Período grátis${trialDays ? ` · ${trialDays} dias restantes` : ""}`}</h2><p className="mt-1 text-sm text-[#765e4e]">Pagamentos avulsos por período. Não há renovação automática.</p></div>
-            <button type="button" onClick={onOpenPlans} className="min-h-12 rounded-xl bg-[#e4571f] px-5 font-extrabold text-white shadow-[0_10px_24px_rgba(228,87,31,0.24)] transition-colors hover:bg-[#c94416]">{activePlan ? "Ver upgrades" : "Ver planos"}</button>
-          </div>
-        </div>
-
-        <div className="app-card mt-5 p-5"><div className="flex items-center gap-4"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--brand-soft)] text-[var(--brand)]"><Users size={22} /></span><div className="min-w-0"><p className="font-bold">Conta</p><p className="mt-1 truncate text-sm text-[#74837f]">{userEmail}</p></div><button onClick={onSignOut} className="quiet-button ml-auto !min-h-10"><LogOut size={17} />Sair</button></div></div>
-      </section>
-    );
-  };
+  const renderSettings = () => (
+    <section className="view-enter">
+      <PageHeading eyebrow="Perfil" title="Dados da empresa" />
+      <ConstructionCompanyForm company={company} onChange={setCompany} onLogo={handleLogo} onSave={() => void saveCompany()} saving={savingCompany} />
+      <ConstructionAccountSecurity email={userEmail} initialAccess={access} onSignOut={onSignOut} onOpenPlans={onOpenPlans} />
+      <ConstructionSettingsExtras userId={userId} userEmail={userEmail} calculatorEnabled={calculatorEnabled} onCalculatorChange={changeCalculatorPreference} onNotice={setNotice} onOpenAdmin={() => setShowAdmin(true)} />
+    </section>
+  );
 
   return (
     <div className="min-h-screen" style={companyTheme(company)}>
-      <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark product="obra" /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#fff0df] px-3 py-1.5 text-xs font-bold text-[#8a4a16] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<button type="button" onClick={onOpenPlans} className="hidden min-h-10 rounded-xl bg-[#e4571f] px-4 text-sm font-extrabold text-white shadow-sm sm:inline-flex sm:items-center">Planos</button></div></div></header>
+      <header className="sticky top-0 z-30 border-b border-[#dce6e3]/80 bg-white/88 backdrop-blur-xl"><div className="mx-auto flex h-[4.65rem] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6"><BrandMark product="obra" /><div className="flex items-center gap-2">{trialDays && <span className="hidden rounded-full bg-[#fff0df] px-3 py-1.5 text-xs font-bold text-[#8a4a16] sm:block">{trialDays} {trialDays === 1 ? "dia grátis" : "dias grátis"}</span>}<InstallAppButton product="obra" /><button type="button" onClick={onOpenPlans} className="hidden min-h-10 rounded-xl bg-[#e4571f] px-4 text-sm font-extrabold text-white shadow-sm sm:inline-flex sm:items-center">Planos</button></div></div></header>
       <main className="content-safe mx-auto max-w-6xl px-4 py-6 sm:px-6 md:py-8">
         {notice && <div role="status" className="mb-5 rounded-xl bg-[var(--brand-soft)] px-4 py-3 text-sm font-semibold text-[var(--brand)]">{notice}</div>}
         {view === "dashboard" && renderDashboard()}
@@ -455,6 +444,7 @@ export function ConstructionBudgetApp({
         {view === "quote" && quote && <Editor quote={quote} setQuote={setQuote} onBack={() => setView("dashboard")} onSave={() => void save(false)} onGenerate={() => void save(true)} saving={saving} />}
       </main>
       <nav className="app-bottom-nav nav-safe fixed inset-x-0 bottom-0 z-40 border-t bg-white/94 px-2 pt-2 shadow-[0_-10px_35px_rgba(24,52,48,0.09)] backdrop-blur-xl" style={{ borderTopColor: "var(--accent)" }} aria-label="Navegação principal"><div className="mx-auto grid max-w-xl grid-cols-5 gap-1">{navItems.map((item) => { const Icon = item.icon; const active = view === item.id; const isNew = item.id === "quote"; return <button key={item.id} onClick={() => isNew ? begin() : (setSearch(""), setSelectedClientId(null), setView(item.id))} aria-current={active ? "page" : undefined} className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 rounded-xl px-1 transition-colors ${active ? "bg-[var(--brand-soft)] text-[var(--brand)]" : "text-[#758580] hover:bg-[#f2f6f5] hover:text-[#30413e]"}`}><span className={isNew ? "grid h-7 w-7 place-items-center rounded-full bg-[var(--brand)] text-white shadow-md" : ""}><Icon size={isNew ? 18 : 20} strokeWidth={active || isNew ? 2.6 : 2} /></span><span className="text-xs font-bold">{item.label}</span></button>; })}</div></nav>
+      {calculatorEnabled && view !== "settings" ? <FloatingCalculator /> : null}
     </div>
   );
 }
