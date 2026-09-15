@@ -1,16 +1,13 @@
-const CACHE = "orcamovel-v12";
+const CACHE = "orcamovel-v13";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
 const CORE = [
   "/",
   "/apps/moveis",
-  "/apps/obra-civil",
   "/manifest.webmanifest",
-  "/orcaobra-manifest.webmanifest",
   "/orcamovel-official-192.png",
   "/orcamovel-official-512.png",
   "/orcamovel-install-192-v2.png",
   "/orcamovel-install-512-v2.png",
-  "/orcaobra-logo.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -19,7 +16,11 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE && key !== BRAND_ICON_CACHE).map((key) => caches.delete(key)))));
+  event.waitUntil(caches.keys().then((keys) => Promise.all(
+    keys
+      .filter((key) => key.startsWith("orcamovel-") && key !== CACHE && key !== BRAND_ICON_CACHE)
+      .map((key) => caches.delete(key)),
+  )));
   self.clients.claim();
 });
 
@@ -28,7 +29,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname === "/manifest.webmanifest" || url.pathname === "/orcaobra-manifest.webmanifest") {
+  if (url.pathname === "/manifest.webmanifest") {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       try {
@@ -58,11 +59,7 @@ self.addEventListener("fetch", (event) => {
         return response;
       } catch {
         const cache = await caches.open(CACHE);
-        const constructionFallback = url.pathname.startsWith("/apps/obra-civil")
-          ? await cache.match("/apps/obra-civil")
-          : undefined;
         return (await cache.match(event.request, { ignoreSearch: true }))
-          || constructionFallback
           || (await cache.match("/apps/moveis"))
           || (await cache.match("/"));
       }
