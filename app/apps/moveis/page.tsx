@@ -1,5 +1,6 @@
 import { AuthShell } from "@/components/auth-shell";
 import { AppAnalytics } from "@/components/app-analytics";
+import { InstallReminderPopup } from "@/components/install-reminder-popup";
 
 export const metadata = {
   title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
@@ -12,5 +13,5 @@ export const metadata = {
 };
 
 export default function MoveisAppPage() {
-  return <><AppAnalytics /><AuthShell /></>;
+  return <><AppAnalytics /><InstallReminderPopup /><AuthShell /></>;
 }
