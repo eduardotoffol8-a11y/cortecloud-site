@@ -11,6 +11,7 @@ interface InstallPromptEvent extends Event {
 
 type InstallProduct = "moveis" | "obra";
 const MOVEL_INSTALLED_KEY = "orcamovel.pwa-installed.v1";
+const OBRA_INSTALLED_KEY = "orcaobra.pwa-installed.v1";
 
 function runningStandalone() {
   if (typeof window === "undefined") return false;
@@ -41,7 +42,10 @@ export function InstallAppButton({
       navigator.serviceWorker.register(worker, options).catch(() => undefined);
     }
     const standalone = runningStandalone();
-    setInstalled(standalone);
+    const installedForProduct = product === "moveis"
+      ? standalone
+      : localStorage.getItem(OBRA_INSTALLED_KEY) === "true";
+    setInstalled(installedForProduct);
     if (product === "moveis" && standalone) localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
     const handlePrompt = (event: Event) => {
       event.preventDefault();
@@ -52,7 +56,7 @@ export function InstallAppButton({
       setInstalled(true);
       setPromptEvent(null);
       setShowHelp(false);
-      if (product === "moveis") localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
+      localStorage.setItem(product === "moveis" ? MOVEL_INSTALLED_KEY : OBRA_INSTALLED_KEY, "true");
     };
     window.addEventListener("beforeinstallprompt", handlePrompt);
     window.addEventListener("appinstalled", handleInstalled);
@@ -81,7 +85,7 @@ export function InstallAppButton({
     const choice = await promptEvent.userChoice;
     if (choice.outcome === "accepted") {
       setInstalled(true);
-      if (product === "moveis") localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
+      localStorage.setItem(product === "moveis" ? MOVEL_INSTALLED_KEY : OBRA_INSTALLED_KEY, "true");
     }
     setPromptEvent(null);
   };
