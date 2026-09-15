@@ -1,6 +1,17 @@
-const CACHE = "orcamovel-v10";
+const CACHE = "orcamovel-v11";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
-const CORE = ["/", "/apps/moveis", "/manifest.webmanifest", "/orcamovel-official-192.png", "/orcamovel-official-512.png", "/orcamovel-install-192-v2.png", "/orcamovel-install-512-v2.png"];
+const CORE = [
+  "/",
+  "/apps/moveis",
+  "/apps/obra-civil",
+  "/manifest.webmanifest",
+  "/orcaobra-manifest.webmanifest",
+  "/orcamovel-official-192.png",
+  "/orcamovel-official-512.png",
+  "/orcamovel-install-192-v2.png",
+  "/orcamovel-install-512-v2.png",
+  "/orcaobra-logo.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)));
@@ -33,7 +44,11 @@ self.addEventListener("fetch", (event) => {
         return response;
       } catch {
         const cache = await caches.open(CACHE);
+        const constructionFallback = url.pathname.startsWith("/apps/obra-civil")
+          ? await cache.match("/apps/obra-civil")
+          : undefined;
         return (await cache.match(event.request, { ignoreSearch: true }))
+          || constructionFallback
           || (await cache.match("/apps/moveis"))
           || (await cache.match("/"));
       }
