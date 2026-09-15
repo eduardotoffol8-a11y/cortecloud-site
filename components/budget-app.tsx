@@ -18,6 +18,7 @@ import type { AccountProfile, AppView, CompanyInfo, ProjectAttachment, Quote, Qu
 import { brl, createEmptyQuote, emptyCompany, nextQuoteNumber, quoteTotal, statusLabel } from "@/lib/quote";
 import { generateQuotePdf, type PdfProjectDocument, type PdfProjectImage } from "@/lib/pdf";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAnalyticsSessionId, getAnalyticsVisitorId } from "@/lib/analytics-client";
 
 const DRAFT_KEY = "orcamovel.draft.v2";
 const HISTORY_KEY = "orcamovel.history.v2";
@@ -320,10 +321,12 @@ export function BudgetApp({ userId, userEmail, profile, onSignOut }: { userId: s
 
   useEffect(() => {
     if (!supabase) return;
-    const key = "orcamovel.analytics.session.v1";
-    const sid = sessionStorage.getItem(key) || crypto.randomUUID();
-    sessionStorage.setItem(key, sid);
-    void supabase.rpc("track_orcamovel_event", { p_event_type: "app_open", p_session_id: sid, p_metadata: { source: "authenticated" } });
+    void supabase.rpc("track_orcamovel_event", {
+      p_event_type: "app_open",
+      p_session_id: getAnalyticsSessionId(),
+      p_metadata: { product: "moveis", source: "authenticated" },
+      p_visitor_id: getAnalyticsVisitorId(),
+    });
   }, [supabase]);
 
   useEffect(() => {

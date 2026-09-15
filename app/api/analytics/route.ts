@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json() as {
       eventType?: string;
       sessionId?: string;
+      visitorId?: string;
       metadata?: Record<string, unknown>;
     };
 
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     if (!sessionId) {
       return Response.json({ ok: false, error: "missing_session" }, { status: 400 });
     }
+    const visitorId = String(body.visitorId || sessionId).slice(0, 100);
 
     const metadata = body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
       ? body.metadata
@@ -36,6 +38,7 @@ export async function POST(request: Request) {
       p_event_type: body.eventType,
       p_session_id: sessionId,
       p_metadata: metadata,
+      p_visitor_id: visitorId,
     });
 
     if (error) {

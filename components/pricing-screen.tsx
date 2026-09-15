@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { InstallAppButton } from "./install-app-button";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAnalyticsSessionId, getAnalyticsVisitorId } from "@/lib/analytics-client";
 import type { PlanType } from "@/lib/types";
 
 export const LIFETIME_PROMO_END = new Date("2026-09-21T03:59:59.000Z").getTime();
@@ -58,9 +59,12 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
     const supabase = getSupabaseBrowserClient();
     if (supabase) {
       void supabase.rpc("get_orcamovel_settings").then(({ data }) => { const row = Array.isArray(data) ? data[0] : data; if (row) setCommercial(row as CommercialSettings); });
-      const sid = sessionStorage.getItem("orcamovel.analytics.session.v1") || crypto.randomUUID();
-      sessionStorage.setItem("orcamovel.analytics.session.v1", sid);
-      void supabase.rpc("track_orcamovel_event", { p_event_type: "plans_open", p_session_id: sid, p_metadata: { source: "app" } });
+      void supabase.rpc("track_orcamovel_event", {
+        p_event_type: "plans_open",
+        p_session_id: getAnalyticsSessionId(),
+        p_metadata: { product: "moveis", source: "app" },
+        p_visitor_id: getAnalyticsVisitorId(),
+      });
     }
     void loadCurrentPlan();
     const onFocus = () => void loadCurrentPlan();
@@ -82,9 +86,12 @@ export function PricingScreen({ email, onSignOut, onRefresh, onBack, trialEnded 
     if (!supabase) return;
     setLoading(plan);
     setMessage("");
-    const sid = sessionStorage.getItem("orcamovel.analytics.session.v1") || crypto.randomUUID();
-    sessionStorage.setItem("orcamovel.analytics.session.v1", sid);
-    void supabase.rpc("track_orcamovel_event", { p_event_type: "checkout_started", p_session_id: sid, p_metadata: { plan } });
+    void supabase.rpc("track_orcamovel_event", {
+      p_event_type: "checkout_started",
+      p_session_id: getAnalyticsSessionId(),
+      p_metadata: { product: "moveis", plan },
+      p_visitor_id: getAnalyticsVisitorId(),
+    });
     const { data, error } = await supabase.functions.invoke("create-mercado-pago-checkout", { body: { plan } });
     if (error || !data?.checkoutUrl) {
       let detail = data?.error as string | undefined;
