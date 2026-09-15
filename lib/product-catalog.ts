@@ -1,4 +1,4 @@
-export type ProductId = "moveis" | "obra-civil" | "hidraulica" | "eletrica" | "revestimentos";
+export type ProductId = "moveis" | "obra-civil" | "hidraulica" | "eletrica" | "revestimentos" | "pintura";
 
 export type ProductDefinition = {
   id: ProductId;
@@ -26,9 +26,10 @@ export const productCatalog: ProductDefinition[] = [
     id: "obra-civil",
     name: "OrçaObra",
     shortName: "Obra civil",
-    description: "Orçamentos organizados por serviços, materiais, etapas e metragem.",
-    audience: "Pedreiros, mestres de obra e construtores",
+    description: "Orçamentos organizados por serviços, materiais, mão de obra, equipamentos, etapas e BDI.",
+    audience: "Pedreiros, mestres de obra, construtores e profissionais de reformas",
     href: "/apps/obra-civil",
+    presentationHref: "/apps/obra-civil/apresentacao",
     status: "available",
   },
   {
@@ -38,6 +39,7 @@ export const productCatalog: ProductDefinition[] = [
     description: "Orçamentos para tubulações, conexões, pontos e serviços hidráulicos.",
     audience: "Encanadores e profissionais hidráulicos",
     href: "/apps/hidraulica",
+    presentationHref: "/apps/hidraulica/apresentacao",
     status: "coming-soon",
   },
   {
@@ -47,6 +49,7 @@ export const productCatalog: ProductDefinition[] = [
     description: "Orçamentos por pontos, circuitos, cabos, quadros e serviços elétricos.",
     audience: "Eletricistas e instaladores",
     href: "/apps/eletrica",
+    presentationHref: "/apps/eletrica/apresentacao",
     status: "coming-soon",
   },
   {
@@ -56,6 +59,17 @@ export const productCatalog: ProductDefinition[] = [
     description: "Orçamentos por área, piso, azulejo, revestimento e assentamento.",
     audience: "Azulejistas e assentadores",
     href: "/apps/revestimentos",
+    presentationHref: "/apps/revestimentos/apresentacao",
+    status: "coming-soon",
+  },
+  {
+    id: "pintura",
+    name: "OrçaPintura",
+    shortName: "Pintura",
+    description: "Orçamentos por ambientes, áreas, preparação, materiais, demãos e acabamento.",
+    audience: "Pintores e empresas de pintura",
+    href: "/apps/pintura",
+    presentationHref: "/apps/pintura/apresentacao",
     status: "coming-soon",
   },
 ];
