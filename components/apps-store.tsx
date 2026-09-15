@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, ClipboardList, Droplets, Hammer, HardHat, Layers3, Lightbulb, Paintbrush, Search, Sparkles, Wrench } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowRight, Check, ClipboardList, Droplets, HardHat, Layers3, Lightbulb, Paintbrush, Search, Sparkles, Wrench } from "lucide-react";
+import { useMemo, useState, type ComponentType } from "react";
 import { productCatalog, type ProductId } from "@/lib/product-catalog";
 import styles from "./apps-store.module.css";
 
@@ -18,7 +18,7 @@ const categories: Record<ProductId, Filter> = {
   pintura: "acabamentos",
 };
 
-const productIcons: Record<ProductId, React.ComponentType<{ size?: number }>> = {
+const productIcons: Record<ProductId, ComponentType<{ size?: number }>> = {
   moveis: Wrench,
   "obra-civil": HardHat,
   hidraulica: Droplets,
