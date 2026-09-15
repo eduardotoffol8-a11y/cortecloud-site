@@ -1,4 +1,5 @@
 import { ConstructionAuthShell } from "@/components/construction-auth-shell";
+import { ConstructionInstallBridge } from "@/components/construction-install-bridge";
 
 export const metadata = {
   title: "OrçaObra | Orçamentos profissionais para construção",
@@ -11,5 +12,10 @@ export const metadata = {
 };
 
 export default function ObraCivilAppPage() {
-  return <ConstructionAuthShell />;
+  return (
+    <>
+      <ConstructionInstallBridge />
+      <ConstructionAuthShell />
+    </>
+  );
 }
