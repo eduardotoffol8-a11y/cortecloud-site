@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Building2, Check, ClipboardList, FileText, HardHat, Layers3, Monitor, ReceiptText, Ruler, WalletCards } from "lucide-react";
+import { ArrowRight, Check, FileText, Layers3, Monitor, WalletCards } from "lucide-react";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
