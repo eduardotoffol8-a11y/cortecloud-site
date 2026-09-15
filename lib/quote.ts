@@ -18,9 +18,22 @@ export const statusLabel: Record<QuoteStatus, string> = { draft: "Rascunho", pen
 
 export const moneyValue = (value: string | number) => {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  const clean = value.replace(/\s/g, "");
+  const clean = value.replace(/\s/g, "").replace(/^R\$/i, "");
   if (!clean) return 0;
-  if (clean.includes(",")) return Number(clean.replace(/\./g, "").replace(",", ".")) || 0;
+
+  // Formato brasileiro com vírgula decimal: 15.000,50 -> 15000.50
+  if (clean.includes(",")) {
+    return Number(clean.replace(/\./g, "").replace(",", ".")) || 0;
+  }
+
+  // Sem vírgula, pontos em grupos de três são separadores de milhar:
+  // 15.000 -> 15000 | 1.250.000 -> 1250000
+  if (/^[+-]?\d{1,3}(?:\.\d{3})+$/.test(clean)) {
+    return Number(clean.replace(/\./g, "")) || 0;
+  }
+
+  // Mantém compatibilidade com decimal usando ponto quando não há padrão de milhar:
+  // 15000 -> 15000 | 15000.50 -> 15000.50
   return Number(clean) || 0;
 };
 
