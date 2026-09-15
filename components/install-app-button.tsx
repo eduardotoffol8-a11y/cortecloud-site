@@ -9,23 +9,32 @@ interface InstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+type InstallProduct = "moveis" | "obra";
+
 function runningStandalone() {
   if (typeof window === "undefined") return false;
   const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
 }
 
-export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyLogo?: string; onRequestLogo?: () => void }) {
+export function InstallAppButton({
+  companyLogo = "",
+  onRequestLogo,
+  product = "moveis",
+}: {
+  companyLogo?: string;
+  onRequestLogo?: () => void;
+  product?: InstallProduct;
+}) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [showLogoChoice, setShowLogoChoice] = useState(false);
+  const appName = product === "obra" ? "OrçaObra" : "OrçaMóvel";
+  const businessLabel = product === "obra" ? "empresa" : "marcenaria";
 
   useEffect(() => {
-    // Register here as well so the app is installable even before login.
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInstalled(runningStandalone());
     const handlePrompt = (event: Event) => {
       event.preventDefault();
@@ -46,9 +55,12 @@ export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyL
   }, []);
 
   useEffect(() => {
+    // O OrçaMóvel mantém o ícone dinâmico já aprovado. O OrçaObra usa seu
+    // manifesto e ícone próprios, sem tocar no cache de identidade do OrçaMóvel.
+    if (product !== "moveis") return;
     if (companyLogo) void prepareCompanyInstallIcon(companyLogo).catch(() => undefined);
     else void useDefaultInstallIcon().catch(() => undefined);
-  }, [companyLogo]);
+  }, [companyLogo, product]);
 
   if (installed) return null;
 
@@ -64,8 +76,10 @@ export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyL
   };
 
   const install = async () => {
-    // Before login there is no company logo yet. Install immediately with the
-    // OrçaMóvel icon instead of sending the user to a dead logo-selection step.
+    if (product === "obra") {
+      await openNativeInstall();
+      return;
+    }
     if (!companyLogo && onRequestLogo) {
       setShowLogoChoice(true);
       return;
@@ -86,17 +100,17 @@ export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyL
 
   return (
     <>
-      <button onClick={() => void install()} className="install-pill" aria-label="Instalar OrçaMóvel neste dispositivo">
+      <button onClick={() => void install()} className="install-pill" aria-label={`Instalar ${appName} neste dispositivo`}>
         <Download size={15} />
         <span>Instalar o app</span>
       </button>
-      {showLogoChoice && (
+      {showLogoChoice && product === "moveis" && (
         <div className="fixed inset-0 z-[70] grid place-items-end bg-[#102521]/35 p-4 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="logo-choice-title">
           <section className="app-card w-full max-w-sm p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-4"><div><h2 id="logo-choice-title" className="text-lg font-extrabold">Ícone do aplicativo</h2><p className="mt-1 text-sm leading-6 text-[#657570]">Você pode usar a logo da sua marcenaria como ícone no celular ou computador.</p></div><button onClick={() => setShowLogoChoice(false)} className="quiet-button !min-h-10 !w-10 !p-0" aria-label="Fechar"><X size={18}/></button></div>
+            <div className="flex items-start justify-between gap-4"><div><h2 id="logo-choice-title" className="text-lg font-extrabold">Ícone do aplicativo</h2><p className="mt-1 text-sm leading-6 text-[#657570]">Você pode usar a logo da sua {businessLabel} como ícone no celular ou computador.</p></div><button onClick={() => setShowLogoChoice(false)} className="quiet-button !min-h-10 !w-10 !p-0" aria-label="Fechar"><X size={18}/></button></div>
             <div className="mt-5 grid gap-3">
               <button type="button" onClick={() => { setShowLogoChoice(false); onRequestLogo?.(); }} className="primary-button w-full"><Building2 size={18}/>Adicionar logo da empresa</button>
-              <button type="button" onClick={() => void installWithDefault()} className="secondary-button w-full"><Sparkles size={18}/>Usar ícone do OrçaMóvel</button>
+              <button type="button" onClick={() => void installWithDefault()} className="secondary-button w-full"><Sparkles size={18}/>Usar ícone do {appName}</button>
             </div>
           </section>
         </div>
@@ -105,11 +119,11 @@ export function InstallAppButton({ companyLogo = "", onRequestLogo }: { companyL
         <div className="fixed inset-0 z-[70] grid place-items-end bg-[#102521]/25 p-4 sm:place-items-center" role="dialog" aria-modal="true" aria-labelledby="install-title">
           <section className="app-card w-full max-w-md p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
-              <div><h2 id="install-title" className="text-lg font-extrabold">Instalar o OrçaMóvel</h2><p className="mt-1 text-sm leading-6 text-[#657570]">A instalação cria um ícone e abre o OrçaMóvel direto, sem passar pela loja de aplicativos.</p></div>
+              <div><h2 id="install-title" className="text-lg font-extrabold">Instalar o {appName}</h2><p className="mt-1 text-sm leading-6 text-[#657570]">A instalação cria um ícone e abre o {appName} direto, sem passar pela loja de aplicativos.</p></div>
               <button onClick={() => setShowHelp(false)} className="quiet-button !min-h-10 !w-10 !p-0" aria-label="Fechar"><X size={18} /></button>
             </div>
             <div className="mt-4 space-y-2">
-              <div className="flex items-start gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><MonitorDown size={19} className="mt-0.5 shrink-0 text-[var(--brand)]" /><span>PC: no Chrome ou Edge, use o ícone de instalação na barra de endereço ou menu ⋮ → Instalar OrçaMóvel.</span></div>
+              <div className="flex items-start gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><MonitorDown size={19} className="mt-0.5 shrink-0 text-[var(--brand)]" /><span>PC: no Chrome ou Edge, use o ícone de instalação na barra de endereço ou menu ⋮ → Instalar {appName}.</span></div>
               <div className="flex items-start gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><MoreVertical size={19} className="mt-0.5 shrink-0 text-[var(--brand)]" /><span>Android: menu ⋮ → Instalar aplicativo.</span></div>
               <div className="flex items-start gap-3 rounded-xl bg-[#f3f7f6] p-3 text-sm font-semibold"><Share2 size={19} className="mt-0.5 shrink-0 text-[var(--brand)]" /><span>iPhone/iPad: Compartilhar → Adicionar à Tela de Início.</span></div>
             </div>
