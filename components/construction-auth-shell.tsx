@@ -19,9 +19,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { BrandMark } from "./brand-mark";
 import { ConstructionBudgetApp } from "./construction-budget-app";
+import { ConstructionPricingScreen } from "./construction-pricing-screen";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-type ProductAccess = {
+export type ConstructionProductAccess = {
   user_id: string;
   product_id: "obra-civil";
   trial_started_at: string;
@@ -112,7 +113,7 @@ function AuthScreen() {
           <div className="mt-10 grid gap-3">
             <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Monitor size={21} /><div><p className="font-bold">Trabalhe melhor no PC</p><p className="text-sm text-[#f4d9c7]">Mais espaço para planilhas, etapas e propostas.</p></div></div>
             <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><Smartphone size={21} /><div><p className="font-bold">Continue no celular</p><p className="text-sm text-[#f4d9c7]">Leve o orçamento para o canteiro ou visita técnica.</p></div></div>
-            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><FileText size={21} /><div><p className="font-bold">PDFs de obra</p><p className="text-sm text-[#f4d9c7]">Escopo, etapas, custos, BDI e condições em uma proposta profissional.</p></div></div>
+            <div className="flex items-center gap-3 rounded-2xl bg-white/8 p-4"><FileText size={21} /><div><p className="font-bold">PDFs profissionais</p><p className="text-sm text-[#f4d9c7]">Escopo, etapas, custos, BDI e condições em uma proposta organizada.</p></div></div>
           </div>
         </aside>
 
@@ -122,7 +123,7 @@ function AuthScreen() {
             <div className="bg-[#6d2e0d] px-6 py-6 text-white">
               <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl bg-white/12"><ShieldCheck size={23} /></div>
               <h2 className="text-2xl font-extrabold tracking-[-0.035em]">Entre no OrçaObra</h2>
-              <p className="mt-1.5 text-sm leading-6 text-[#f4d9c7]">O período grátis do OrçaObra começa apenas quando você acessa este aplicativo.</p>
+              <p className="mt-1.5 text-sm leading-6 text-[#f4d9c7]">Acesse com a mesma conta no computador, celular ou tablet.</p>
             </div>
             <div className="space-y-4 p-5 sm:p-6">
               <button type="button" onClick={() => void signInWithGoogle()} disabled={Boolean(loading)} className="primary-button w-full !bg-[#a6400d]">
@@ -166,30 +167,13 @@ function AccessProblem({ message, onRetry, onSignOut }: { message: string; onRet
   );
 }
 
-function TrialEnded({ onSignOut }: { onSignOut: () => void }) {
-  return (
-    <main className="grid min-h-screen place-items-center bg-[linear-gradient(180deg,#fff8f3,#f8efe9)] p-5">
-      <section className="w-full max-w-lg overflow-hidden rounded-[1.55rem] border border-[#ead7cb] bg-white shadow-[0_24px_70px_rgba(91,49,24,0.12)]">
-        <div className="bg-[#6d2e0d] p-6 text-white">
-          <CalendarClock size={30} />
-          <h1 className="mt-4 text-2xl font-extrabold">O período grátis do OrçaObra terminou</h1>
-          <p className="mt-2 text-sm leading-6 text-[#f4d9c7]">Seus clientes, obras e propostas continuam salvos nas tabelas exclusivas do OrçaObra.</p>
-        </div>
-        <div className="p-6">
-          <p className="text-sm leading-6 text-[#6f625b]">Os planos comerciais próprios do OrçaObra ainda não estão liberados. Assim, nenhuma compra do OrçaMóvel será usada por engano para liberar este produto.</p>
-          <button onClick={onSignOut} className="quiet-button mt-5 w-full"><LogOut size={17} />Sair da conta</button>
-        </div>
-      </section>
-    </main>
-  );
-}
-
 export function ConstructionAuthShell() {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [session, setSession] = useState<Session | null>(null);
-  const [access, setAccess] = useState<ProductAccess | null>(null);
+  const [access, setAccess] = useState<ConstructionProductAccess | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showPlans, setShowPlans] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const loadAccess = useCallback(async (currentSession: Session | null) => {
@@ -209,7 +193,7 @@ export function ConstructionAuthShell() {
       setAccess(null);
       setError("A estrutura de acesso do OrçaObra não respondeu. Nenhum dado do OrçaMóvel foi alterado.");
     } else {
-      setAccess(row as ProductAccess);
+      setAccess(row as ConstructionProductAccess);
     }
     setNow(Date.now());
     setLoading(false);
@@ -249,6 +233,21 @@ export function ConstructionAuthShell() {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    const payment = new URLSearchParams(window.location.search).get("payment");
+    if (!payment || !session) return;
+    const retries = [0, 1200, 3000, 6000, 10000].map((delay) => window.setTimeout(() => void refresh(), delay));
+    const cleanup = window.setTimeout(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }, 10500);
+    return () => {
+      retries.forEach(window.clearTimeout);
+      window.clearTimeout(cleanup);
+    };
+  }, [refresh, session]);
+
   const signOut = async () => { await supabase?.auth.signOut(); };
 
   if (loading) return <LoadingScreen />;
@@ -262,7 +261,21 @@ export function ConstructionAuthShell() {
   );
   const trialAccess = access.subscription_status === "trial" && new Date(access.trial_ends_at).getTime() > now;
 
-  if (!paidAccess && !trialAccess) return <TrialEnded onSignOut={() => void signOut()} />;
+  if (!paidAccess && !trialAccess) {
+    return <ConstructionPricingScreen email={session.user.email || ""} onSignOut={() => void signOut()} onRefresh={() => void refresh()} trialEnded />;
+  }
 
-  return <ConstructionBudgetApp userId={session.user.id} profile={null} onSignOut={() => void signOut()} />;
+  if (showPlans) {
+    return <ConstructionPricingScreen email={session.user.email || ""} onSignOut={() => void signOut()} onRefresh={() => void refresh()} onBack={() => setShowPlans(false)} trialEnded={false} />;
+  }
+
+  return (
+    <ConstructionBudgetApp
+      userId={session.user.id}
+      userEmail={session.user.email || ""}
+      access={access}
+      onOpenPlans={() => setShowPlans(true)}
+      onSignOut={() => void signOut()}
+    />
+  );
 }
