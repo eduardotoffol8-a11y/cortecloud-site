@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppsStore } from "@/components/apps-store";
 import { AuthReturnBridge } from "@/components/auth-return-bridge";
+import { ReferralRedirectBridge } from "@/components/referral-redirect-bridge";
 
 export const metadata: Metadata = {
   title: "Aplicativos Orça | Orçamentos profissionais por segmento",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <><AuthReturnBridge /><AppsStore /></>;
+  return <><AuthReturnBridge /><ReferralRedirectBridge /><AppsStore /></>;
 }
