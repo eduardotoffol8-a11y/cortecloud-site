@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
+import { AppsStore } from "@/components/apps-store";
 import { AuthReturnBridge } from "@/components/auth-return-bridge";
-import MoveisPresentationPage from "./apps/moveis/apresentacao/page";
 
 export const metadata: Metadata = {
-  title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
-  description: "Organize clientes, crie propostas de móveis sob medida e envie PDFs profissionais pelo celular ou computador. Teste grátis por 30 dias.",
+  title: "Aplicativos Orça | Orçamentos profissionais por segmento",
+  description: "Conheça OrçaMóvel, OrçaObra e a família de aplicativos profissionais para orçamentos no celular e computador.",
 };
 
 export default function Home() {
-  return <><AuthReturnBridge /><MoveisPresentationPage /></>;
+  return <><AuthReturnBridge /><AppsStore /></>;
 }
