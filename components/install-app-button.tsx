@@ -10,6 +10,7 @@ interface InstallPromptEvent extends Event {
 }
 
 type InstallProduct = "moveis" | "obra";
+const MOVEL_INSTALLED_KEY = "orcamovel.pwa-installed.v1";
 
 function runningStandalone() {
   if (typeof window === "undefined") return false;
@@ -35,7 +36,10 @@ export function InstallAppButton({
 
   useEffect(() => {
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    setInstalled(runningStandalone());
+    const standalone = runningStandalone();
+    setInstalled(standalone);
+    if (product === "moveis" && standalone) localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
+
     const handlePrompt = (event: Event) => {
       event.preventDefault();
       setPromptEvent(event as InstallPromptEvent);
@@ -45,6 +49,7 @@ export function InstallAppButton({
       setInstalled(true);
       setPromptEvent(null);
       setShowHelp(false);
+      if (product === "moveis") localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
     };
     window.addEventListener("beforeinstallprompt", handlePrompt);
     window.addEventListener("appinstalled", handleInstalled);
@@ -52,7 +57,7 @@ export function InstallAppButton({
       window.removeEventListener("beforeinstallprompt", handlePrompt);
       window.removeEventListener("appinstalled", handleInstalled);
     };
-  }, []);
+  }, [product]);
 
   useEffect(() => {
     // O OrçaMóvel mantém o ícone dinâmico já aprovado. O OrçaObra usa seu
@@ -71,7 +76,10 @@ export function InstallAppButton({
     }
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice;
-    if (choice.outcome === "accepted") setInstalled(true);
+    if (choice.outcome === "accepted") {
+      setInstalled(true);
+      if (product === "moveis") localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
+    }
     setPromptEvent(null);
   };
 
