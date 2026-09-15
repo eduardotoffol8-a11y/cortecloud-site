@@ -9,6 +9,7 @@ export interface ClientInfo {
 
 export interface RegisteredClient {
   id: string; name: string; phone: string; email: string; document: string; address: string;
+  projectName?: string;
   createdAt: string; updatedAt: string;
 }
 
