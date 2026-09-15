@@ -35,11 +35,14 @@ export function InstallAppButton({
   const businessLabel = product === "obra" ? "empresa" : "marcenaria";
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    if ("serviceWorker" in navigator) {
+      const worker = product === "obra" ? "/apps/obra-civil/sw.js" : "/sw.js";
+      const options = product === "obra" ? { scope: "/apps/obra-civil/" } : undefined;
+      navigator.serviceWorker.register(worker, options).catch(() => undefined);
+    }
     const standalone = runningStandalone();
     setInstalled(standalone);
     if (product === "moveis" && standalone) localStorage.setItem(MOVEL_INSTALLED_KEY, "true");
-
     const handlePrompt = (event: Event) => {
       event.preventDefault();
       setPromptEvent(event as InstallPromptEvent);
