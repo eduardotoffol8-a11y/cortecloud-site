@@ -101,7 +101,7 @@ export function AppsStore() {
         <div className={styles.featured}>
           <article className={styles.featuredCard}>
             <div className={styles.featuredCopy}>
-              <div className={styles.productTop}><span className={styles.logoBox}><ProductLogo id="moveis" /></span><div><span className={styles.status}>Disponível</span><h3>{moveis.name}</h3></div></div>
+              <div className={styles.productTop}><span className={styles.logoBox}><ProductLogo id="moveis" /></span><div><span className={`${styles.status} ${styles.launchStatus}`}>Lançamento · teste grátis</span><h3>{moveis.name}</h3></div></div>
               <p>Orçamentos para marcenaria sob medida, com clientes, móveis, revisões e PDFs personalizados com a identidade da empresa.</p>
               <ul className={styles.features}><li><Check size={16}/>Móveis, medidas e acabamentos</li><li><Check size={16}/>PDF personalizado</li><li><Check size={16}/>30 dias grátis</li></ul>
               <div className={styles.actions}><Link href={moveis.presentationHref || moveis.href} className={styles.primary}>Conhecer OrçaMóvel <ArrowRight size={16}/></Link><Link href={moveis.href} className={styles.secondary}>Abrir app</Link></div>
@@ -129,7 +129,7 @@ export function AppsStore() {
             return <article className={styles.productCard} key={product.id}>
               <div className={styles.productCardTop}><span className={styles.productIcon}>{product.id === "moveis" || product.id === "obra-civil" ? <ProductLogo id={product.id} /> : <Icon size={23}/>}</span><span className={styles.soon}>{product.status === "available" ? "Disponível" : "Em breve"}</span></div>
               <h3>{product.name}</h3><p>{product.description}</p><span className={styles.audience}>{product.audience}</span>
-              {product.status === "available" ? <Link href={product.presentationHref || product.href}>Ver aplicativo <ArrowRight size={15} style={{display:'inline',verticalAlign:'-2px'}}/></Link> : <span style={{marginTop:'auto',paddingTop:18,color:'#8b9794',fontWeight:800}}>Em desenvolvimento</span>}
+              {product.status === "available" ? <Link className={styles.catalogCta} href={product.presentationHref || product.href}>Conhecer aplicativo <ArrowRight size={16}/></Link> : <span style={{marginTop:'auto',paddingTop:18,color:'#8b9794',fontWeight:800}}>Em desenvolvimento</span>}
             </article>;
           }) : <div className={styles.empty}>Nenhum aplicativo encontrado para esta busca.</div>}
         </div>
