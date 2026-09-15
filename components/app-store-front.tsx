@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   ArrowRight, BadgeCheck, Boxes, BriefcaseBusiness, Building2, CheckCircle2, Construction,
   Droplets, FileText, FolderOpen, Hammer, LayoutDashboard, Ruler, Search, ShieldCheck,
-  MessageCircle, Sparkles, Star, UsersRound, Zap,
+  MessageCircle, Paintbrush, Sparkles, Star, UsersRound, Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { productCatalog, type ProductDefinition, type ProductId } from "@/lib/product-catalog";
@@ -16,6 +16,7 @@ const appVisuals: Record<ProductId, { icon: typeof Hammer; category: string; lab
   hidraulica: { icon: Droplets, category: "Instalações", label: "Hidráulica", tone: "from-slate-900 via-sky-900 to-cyan-700" },
   eletrica: { icon: Zap, category: "Instalações", label: "Elétrica", tone: "from-slate-900 via-yellow-900 to-amber-600" },
   revestimentos: { icon: Boxes, category: "Acabamentos", label: "Revestimentos", tone: "from-slate-900 via-rose-950 to-orange-700" },
+  pintura: { icon: Paintbrush, category: "Acabamentos", label: "Pintura", tone: "from-slate-900 via-violet-950 to-fuchsia-700" },
 };
 
 const filters = ["Todos", "Marcenaria", "Construção", "Instalações", "Acabamentos"];
