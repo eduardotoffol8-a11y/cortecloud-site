@@ -1,4 +1,4 @@
-const CACHE = "orcamovel-v11";
+const CACHE = "orcamovel-v12";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
 const CORE = [
   "/",
@@ -27,6 +27,20 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname === "/manifest.webmanifest" || url.pathname === "/orcaobra-manifest.webmanifest") {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      try {
+        const response = await fetch(event.request, { cache: "no-store" });
+        if (response.ok) await cache.put(event.request, response.clone());
+        return response;
+      } catch {
+        return (await cache.match(event.request)) || Response.error();
+      }
+    })());
+    return;
+  }
 
   if (url.pathname === "/orcamovel-install-192-v2.png" || url.pathname === "/orcamovel-install-512-v2.png") {
     event.respondWith(caches.open(BRAND_ICON_CACHE).then((cache) => cache.match(url.pathname)).then((custom) => custom || fetch(event.request)));
