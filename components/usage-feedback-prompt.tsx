@@ -20,7 +20,7 @@ export function UsageFeedbackPrompt() {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
-    if (!supabase || localStorage.getItem(PROMPTED_KEY) === "true") return;
+    if (!supabase) return;
     let alive = true;
     let authenticated = false;
     let interval: number | undefined;
@@ -44,6 +44,22 @@ export function UsageFeedbackPrompt() {
       maybeShow();
     };
 
+    const stopTracking = () => {
+      if (startedAt.current !== null) flushVisibleTime();
+      startedAt.current = null;
+      authenticated = false;
+      if (interval) window.clearInterval(interval);
+      interval = undefined;
+    };
+
+    const startTracking = (authUser: { id: string; email?: string | null }) => {
+      authenticated = true;
+      setUser({ id: authUser.id, email: authUser.email || "" });
+      if (localStorage.getItem(PROMPTED_KEY) === "true" || maybeShow()) return;
+      if (document.visibilityState === "visible") startedAt.current = Date.now();
+      if (!interval) interval = window.setInterval(flushVisibleTime, 15_000);
+    };
+
     const handleVisibility = () => {
       if (document.visibilityState === "hidden") {
         flushVisibleTime();
@@ -53,23 +69,27 @@ export function UsageFeedbackPrompt() {
       }
     };
 
-    const begin = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!alive || !data.user) return;
-      authenticated = true;
-      setUser({ id: data.user.id, email: data.user.email || "" });
-      if (maybeShow()) return;
-      if (document.visibilityState === "visible") startedAt.current = Date.now();
-      interval = window.setInterval(flushVisibleTime, 15_000);
-      document.addEventListener("visibilitychange", handleVisibility);
-    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
-    void begin();
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!alive) return;
+      if (data.user) startTracking(data.user);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!alive) return;
+      if (session?.user) startTracking(session.user);
+      else {
+        stopTracking();
+        setUser(null);
+      }
+    });
+
     return () => {
       alive = false;
-      if (interval) window.clearInterval(interval);
-      if (startedAt.current !== null) flushVisibleTime();
+      stopTracking();
       document.removeEventListener("visibilitychange", handleVisibility);
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
