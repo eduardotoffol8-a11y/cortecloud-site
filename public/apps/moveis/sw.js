@@ -1,10 +1,11 @@
-const CACHE = "orcamovel-v15";
-const APP_HOME = "/apps/moveis/";
+const CACHE = "orcamovel-v16";
+const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
+const APP_HOME = "/apps/moveis";
 const CORE = [
   APP_HOME,
-  "/manifest.webmanifest",
-  "/orcamovel-install-192-v2.png",
-  "/orcamovel-install-512-v2.png",
+  "/manifest.webmanifest?v=20260916-6",
+  "/orcamovel-install-192-v2.png?v=20260916-6",
+  "/orcamovel-install-512-v2.png?v=20260916-6",
 ];
 
 self.addEventListener("install", (event) => {
@@ -13,10 +14,12 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(
-    keys.filter((key) => key.startsWith("orcamovel-") && key !== CACHE && key !== "orcamovel-brand-icon-v2").map((key) => caches.delete(key)),
-  )));
-  self.clients.claim();
+  event.waitUntil(Promise.all([
+    caches.keys().then((keys) => Promise.all(
+      keys.filter((key) => key.startsWith("orcamovel-") && key !== CACHE && key !== BRAND_ICON_CACHE).map((key) => caches.delete(key)),
+    )),
+    self.clients.claim(),
+  ]));
 });
 
 self.addEventListener("fetch", (event) => {
@@ -25,7 +28,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (event.request.mode === "navigate") {
-    if (!url.pathname.startsWith("/apps/moveis")) return;
+    if (!url.pathname.startsWith(APP_HOME)) return;
     event.respondWith((async () => {
       try {
         const response = await fetch(event.request, { cache: "no-store" });
@@ -48,6 +51,6 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (url.pathname === "/orcamovel-install-192-v2.png" || url.pathname === "/orcamovel-install-512-v2.png") {
-    event.respondWith(caches.open("orcamovel-brand-icon-v2").then((cache) => cache.match(url.pathname)).then((custom) => custom || fetch(event.request)));
+    event.respondWith(caches.open(BRAND_ICON_CACHE).then((cache) => cache.match(url.pathname)).then((custom) => custom || fetch(event.request, { cache: "no-store" })));
   }
 });
