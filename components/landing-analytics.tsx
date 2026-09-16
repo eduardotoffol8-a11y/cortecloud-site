@@ -10,7 +10,7 @@ export function LandingAnalytics(){
    const target=(event.target as HTMLElement).closest<HTMLElement>("[data-track]");
    if(!target)return;
    const name=target.dataset.track;
-   if(name==="plans_open")void trackOrcamovelEvent("plans_open",{source:"site",path:location.pathname});
+   if(name==="plans_open")void trackOrcamovelEvent("site_plans_interest",{source:"site",path:location.pathname});
   };
   document.addEventListener("click",click);
   return()=>document.removeEventListener("click",click);
