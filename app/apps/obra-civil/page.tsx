@@ -1,5 +1,6 @@
 import { ConstructionAuthShell } from "@/components/construction-auth-shell";
 import { ConstructionInstallBridge } from "@/components/construction-install-bridge";
+import { ConstructionAppAnalytics } from "@/components/construction-app-analytics";
 
 export const metadata = {
   title: "OrçaObra | Orçamentos profissionais para construção",
@@ -7,11 +8,11 @@ export const metadata = {
   applicationName: "OrçaObra",
   manifest: "/orcaobra-manifest.webmanifest?v=20260916-6",
   icons: {
-    icon: "/api/orcaobra-icon/192?v=20260916-6",
+    icon: "/orcaobra-logo.png",
     apple: "/orcaobra-logo.png",
   },
 };
 
 export default function ObraCivilAppPage() {
-  return <><ConstructionInstallBridge /><ConstructionAuthShell /></>;
+  return <><ConstructionAppAnalytics /><ConstructionInstallBridge /><ConstructionAuthShell /></>;
 }
