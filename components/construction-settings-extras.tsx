@@ -18,7 +18,7 @@ export function ConstructionSettingsExtras({ userId, userEmail, calculatorEnable
   const [feedbackText, setFeedbackText] = useState("");
 
   const shareOrcaObra = async () => {
-    const url = `${window.location.origin}/apps/obra-civil?utm_source=indicacao&utm_medium=compartilhamento`;
+    const url = `${window.location.origin}/apps/obra-civil/apresentacao?utm_source=indicacao&utm_medium=compartilhamento`;
     const shareData = { title: "OrçaObra", text: "Conheça o OrçaObra: orçamentos profissionais para construção e reformas no celular ou computador.", url };
     try {
       if (navigator.share) return void await navigator.share(shareData);
