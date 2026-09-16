@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppsStore } from "@/components/apps-store";
 import { AuthReturnBridge } from "@/components/auth-return-bridge";
+import { PwaProductRecoveryBridge } from "@/components/pwa-product-recovery-bridge";
 import { ReferralRedirectBridge } from "@/components/referral-redirect-bridge";
 
 export const metadata: Metadata = {
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <><AuthReturnBridge /><ReferralRedirectBridge /><AppsStore /></>;
+  return <><PwaProductRecoveryBridge /><AuthReturnBridge /><ReferralRedirectBridge /><AppsStore /></>;
 }
