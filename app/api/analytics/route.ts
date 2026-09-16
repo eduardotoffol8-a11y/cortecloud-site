@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 // This public endpoint only accepts anonymous acquisition events. Authenticated
 // commercial stages are recorded directly through the signed-in Supabase client.
 const allowedEvents = new Set(["site_view", "app_open", "site_plans_interest"]);
+const allowedProducts = new Set(["moveis", "obra-civil"]);
 const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dswqqmgadqwvisygnuib.supabase.co";
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4tv8A3SqS_9KC_Q8nykwlA_ZtX1dFtl";
 
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json() as {
       eventType?: string;
+      product?: string;
       sessionId?: string;
       visitorId?: string;
       metadata?: Record<string, unknown>;
@@ -17,6 +19,10 @@ export async function POST(request: Request) {
 
     if (!body.eventType || !allowedEvents.has(body.eventType)) {
       return Response.json({ ok: false, error: "invalid_event" }, { status: 400 });
+    }
+    const product = String(body.product || "moveis");
+    if (!allowedProducts.has(product)) {
+      return Response.json({ ok: false, error: "invalid_product" }, { status: 400 });
     }
 
     const sessionId = String(body.sessionId || "").slice(0, 100);
@@ -36,7 +42,8 @@ export async function POST(request: Request) {
     const supabase = createClient(projectUrl, publishableKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { error } = await supabase.rpc("track_orcamovel_event", {
+    const { error } = await supabase.rpc("track_orca_event", {
+      p_product_id: product,
       p_event_type: body.eventType,
       p_session_id: sessionId,
       p_metadata: metadata,
@@ -44,7 +51,7 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error("OrçaMóvel analytics error", error.message);
+      console.error("Orça analytics error", error.message);
       return Response.json({ ok: false }, { status: 502 });
     }
 

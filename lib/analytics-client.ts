@@ -6,6 +6,8 @@ export type OrcamovelAnalyticsEvent =
   | "plans_open"
   | "checkout_started";
 
+export type AnalyticsProduct = "moveis" | "obra-civil";
+
 const SESSION_KEY = "orcamovel.analytics.session.v1";
 const VISITOR_KEY = "orcamovel.analytics.visitor.v1";
 
@@ -40,8 +42,9 @@ export function getAnalyticsVisitorId() {
   }
 }
 
-export async function trackOrcamovelEvent(
+export async function trackOrcaEvent(
   eventType: OrcamovelAnalyticsEvent,
+  product: AnalyticsProduct,
   metadata: Record<string, unknown> = {},
 ) {
   if (typeof window === "undefined") return;
@@ -53,9 +56,10 @@ export async function trackOrcamovelEvent(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         eventType,
+        product,
         sessionId,
         visitorId,
-        metadata: { product: "moveis", ...metadata },
+        metadata: { ...metadata, product },
       }),
       cache: "no-store",
       keepalive: true,
@@ -64,4 +68,11 @@ export async function trackOrcamovelEvent(
   } catch {
     // Analytics must never block the user experience.
   }
+}
+
+export async function trackOrcamovelEvent(
+  eventType: OrcamovelAnalyticsEvent,
+  metadata: Record<string, unknown> = {},
+) {
+  return trackOrcaEvent(eventType, "moveis", metadata);
 }

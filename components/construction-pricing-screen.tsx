@@ -4,6 +4,7 @@ import { ArrowLeft, BadgeCheck, CalendarClock, Check, Clock3, LoaderCircle, LogO
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BrandMark } from "./brand-mark";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getAnalyticsSessionId, getAnalyticsVisitorId } from "@/lib/analytics-client";
 import type { PlanType } from "@/lib/types";
 
 const LIFETIME_PROMO_END = new Date("2026-09-21T03:59:59.000Z").getTime();
@@ -65,6 +66,13 @@ export function ConstructionPricingScreen({ email, onSignOut, onRefresh, onBack,
         const row = Array.isArray(data) ? data[0] : data;
         if (row) setCommercial(row as CommercialSettings);
       });
+      void supabase.rpc("track_orca_event", {
+        p_product_id: "obra-civil",
+        p_event_type: "plans_open",
+        p_session_id: getAnalyticsSessionId(),
+        p_metadata: { source: "app" },
+        p_visitor_id: getAnalyticsVisitorId(),
+      });
     }
     void loadCurrentPlan();
     const onFocus = () => void loadCurrentPlan();
@@ -86,6 +94,13 @@ export function ConstructionPricingScreen({ email, onSignOut, onRefresh, onBack,
     if (!supabase) return;
     setLoading(plan);
     setMessage("");
+    void supabase.rpc("track_orca_event", {
+      p_product_id: "obra-civil",
+      p_event_type: "checkout_started",
+      p_session_id: getAnalyticsSessionId(),
+      p_metadata: { plan },
+      p_visitor_id: getAnalyticsVisitorId(),
+    });
     const { data, error } = await supabase.functions.invoke("create-mercado-pago-checkout", { body: { plan, product_id: "obra-civil" } });
     if (error || !data?.checkoutUrl) {
       let detail = data?.error as string | undefined;
