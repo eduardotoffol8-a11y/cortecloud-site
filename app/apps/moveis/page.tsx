@@ -1,6 +1,7 @@
 import { AuthShell } from "@/components/auth-shell";
 import { AppAnalytics } from "@/components/app-analytics";
 import { InstallReminderPopup } from "@/components/install-reminder-popup";
+import { OrcaMovelPwaMigration } from "@/components/orcamovel-pwa-migration";
 
 export const metadata = {
   title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
@@ -13,5 +14,5 @@ export const metadata = {
 };
 
 export default function MoveisAppPage() {
-  return <><AppAnalytics /><InstallReminderPopup /><AuthShell /></>;
+  return <><AppAnalytics /><InstallReminderPopup /><OrcaMovelPwaMigration /><AuthShell /></>;
 }
