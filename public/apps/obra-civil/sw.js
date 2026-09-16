@@ -1,7 +1,7 @@
-const CACHE = "orcaobra-v1";
+const CACHE = "orcaobra-v2";
 const CORE = [
   "/apps/obra-civil",
-  "/orcaobra-manifest.webmanifest",
+  "/orcaobra-manifest.webmanifest?v=20260916-2",
   "/orcaobra-logo.png",
 ];
 
@@ -29,7 +29,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith((async () => {
       try {
-        const response = await fetch(event.request);
+        const response = await fetch(event.request, { cache: "no-store" });
         if (response.ok) {
           const cache = await caches.open(CACHE);
           await cache.put(event.request, response.clone());
