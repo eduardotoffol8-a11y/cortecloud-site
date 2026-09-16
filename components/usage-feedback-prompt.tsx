@@ -22,6 +22,7 @@ export function UsageFeedbackPrompt() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase || localStorage.getItem(PROMPTED_KEY) === "true") return;
     let alive = true;
+    let authenticated = false;
     let interval: number | undefined;
 
     const readUsed = () => Math.max(0, Number(localStorage.getItem(USED_MS_KEY) || "0") || 0);
@@ -47,7 +48,7 @@ export function UsageFeedbackPrompt() {
       if (document.visibilityState === "hidden") {
         flushVisibleTime();
         startedAt.current = null;
-      } else if (user) {
+      } else if (authenticated && localStorage.getItem(PROMPTED_KEY) !== "true") {
         startedAt.current = Date.now();
       }
     };
@@ -55,8 +56,8 @@ export function UsageFeedbackPrompt() {
     const begin = async () => {
       const { data } = await supabase.auth.getUser();
       if (!alive || !data.user) return;
-      const nextUser = { id: data.user.id, email: data.user.email || "" };
-      setUser(nextUser);
+      authenticated = true;
+      setUser({ id: data.user.id, email: data.user.email || "" });
       if (maybeShow()) return;
       if (document.visibilityState === "visible") startedAt.current = Date.now();
       interval = window.setInterval(flushVisibleTime, 15_000);
@@ -70,7 +71,7 @@ export function UsageFeedbackPrompt() {
       if (startedAt.current !== null) flushVisibleTime();
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [user]);
+  }, []);
 
   const submit = async () => {
     if (!user || message.trim().length < 2) {
