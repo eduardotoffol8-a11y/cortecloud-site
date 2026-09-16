@@ -3,6 +3,7 @@ import { AppAnalytics } from "@/components/app-analytics";
 import { InstallReminderPopup } from "@/components/install-reminder-popup";
 import { OrcaMovelPwaMigration } from "@/components/orcamovel-pwa-migration";
 import { MoveisInstallBridge } from "@/components/moveis-install-bridge";
+import { UsageFeedbackPrompt } from "@/components/usage-feedback-prompt";
 
 export const metadata = {
   title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
@@ -15,5 +16,5 @@ export const metadata = {
 };
 
 export default function MoveisAppPage() {
-  return <><AppAnalytics /><MoveisInstallBridge /><InstallReminderPopup /><OrcaMovelPwaMigration /><AuthShell /></>;
+  return <><AppAnalytics /><MoveisInstallBridge /><InstallReminderPopup /><UsageFeedbackPrompt /><OrcaMovelPwaMigration /><AuthShell /></>;
 }
