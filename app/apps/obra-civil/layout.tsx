@@ -6,9 +6,12 @@ export const metadata: Metadata = {
   applicationName: "OrçaObra",
   title: { default: "OrçaObra | Orçamentos profissionais", template: "%s | OrçaObra" },
   description: "Orçamentos profissionais para construção e reformas.",
-  manifest: "/orcaobra-manifest.webmanifest?v=20260916-4",
+  manifest: "/orcaobra-manifest.webmanifest?v=20260916-6",
   icons: {
-    icon: [{ url: "/orcaobra-pwa-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/api/orcaobra-icon/192?v=20260916-6", sizes: "192x192", type: "image/png" },
+      { url: "/api/orcaobra-icon/512?v=20260916-6", sizes: "512x512", type: "image/png" },
+    ],
     apple: [{ url: "/orcaobra-logo.png", type: "image/png" }],
   },
 };
