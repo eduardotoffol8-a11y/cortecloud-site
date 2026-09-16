@@ -12,11 +12,23 @@ interface InstallPromptEvent extends Event {
 type InstallProduct = "moveis" | "obra";
 const MOVEL_INSTALLED_KEY = "orcamovel.pwa-installed.v1";
 const OBRA_INSTALLED_KEY = "orcaobra.pwa-installed.v1";
+const LAST_PRODUCT_KEY = "orcamento.pwa-last-product";
 
 function runningStandalone() {
   if (typeof window === "undefined") return false;
   const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
   return window.matchMedia("(display-mode: standalone)").matches || navigatorWithStandalone.standalone === true;
+}
+
+async function removeLegacyRootWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  const rootScope = `${window.location.origin}/`;
+  await Promise.all(registrations.map(async (registration) => {
+    if (registration.scope !== rootScope) return;
+    const script = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || "";
+    if (script.endsWith("/sw.js")) await registration.unregister();
+  }));
 }
 
 export function InstallAppButton({
@@ -36,11 +48,15 @@ export function InstallAppButton({
   const businessLabel = product === "obra" ? "empresa" : "marcenaria";
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    const configureWorker = async () => {
+      if (!("serviceWorker" in navigator)) return;
+      await removeLegacyRootWorker();
       const worker = product === "obra" ? "/apps/obra-civil/sw.js" : "/sw.js";
-      const options = product === "obra" ? { scope: "/apps/obra-civil/" } : undefined;
-      navigator.serviceWorker.register(worker, options).catch(() => undefined);
-    }
+      const scope = product === "obra" ? "/apps/obra-civil/" : "/apps/moveis/";
+      await navigator.serviceWorker.register(worker, { scope, updateViaCache: "none" });
+    };
+    void configureWorker().catch(() => undefined);
+
     const standalone = runningStandalone();
     const installedForProduct = product === "moveis"
       ? standalone
@@ -57,6 +73,7 @@ export function InstallAppButton({
       setPromptEvent(null);
       setShowHelp(false);
       localStorage.setItem(product === "moveis" ? MOVEL_INSTALLED_KEY : OBRA_INSTALLED_KEY, "true");
+      localStorage.setItem(LAST_PRODUCT_KEY, product);
     };
     window.addEventListener("beforeinstallprompt", handlePrompt);
     window.addEventListener("appinstalled", handleInstalled);
@@ -77,6 +94,7 @@ export function InstallAppButton({
   if (installed) return null;
 
   const openNativeInstall = async () => {
+    localStorage.setItem(LAST_PRODUCT_KEY, product);
     if (!promptEvent) {
       setShowHelp(true);
       return;
@@ -86,6 +104,7 @@ export function InstallAppButton({
     if (choice.outcome === "accepted") {
       setInstalled(true);
       localStorage.setItem(product === "moveis" ? MOVEL_INSTALLED_KEY : OBRA_INSTALLED_KEY, "true");
+      localStorage.setItem(LAST_PRODUCT_KEY, product);
     }
     setPromptEvent(null);
   };

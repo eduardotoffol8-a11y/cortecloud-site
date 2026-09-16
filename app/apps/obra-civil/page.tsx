@@ -4,7 +4,8 @@ import { ConstructionInstallBridge } from "@/components/construction-install-bri
 export const metadata = {
   title: "OrçaObra | Orçamentos profissionais para construção",
   description: "Organize obras, serviços, custos e propostas profissionais de construção.",
-  manifest: "/orcaobra-manifest.webmanifest",
+  applicationName: "OrçaObra",
+  manifest: "/orcaobra-manifest.webmanifest?v=20260916-2",
   icons: {
     icon: "/orcaobra-logo.png",
     apple: "/orcaobra-logo.png",
