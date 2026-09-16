@@ -2,17 +2,16 @@
   "name": "OrçaMóvel",
   "short_name": "OrçaMóvel",
   "description": "Orçamentos profissionais para marcenaria no celular ou computador.",
-  "id": "/apps/moveis/",
-  "start_url": "/apps/moveis/?pwa=moveis",
-  "scope": "/apps/moveis/",
+  "id": "/apps/moveis",
+  "start_url": "/apps/moveis?pwa=moveis",
+  "scope": "/apps/moveis",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": ["standalone"],
   "background_color": "#f2f6f5",
   "theme_color": "#0C4D46",
   "prefer_related_applications": false,
   "icons": [
-    { "src": "/orcamovel-install-192-v2.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/orcamovel-install-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/orcamovel-install-512-v2.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/orcamovel-install-192-v2.png?v=20260916-6", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/orcamovel-install-512-v2.png?v=20260916-6", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
