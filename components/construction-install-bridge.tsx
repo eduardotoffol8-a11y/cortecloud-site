@@ -9,6 +9,7 @@ export function ConstructionInstallBridge() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    window.localStorage.setItem("orcamento.pwa-last-product", "obra");
     if (!supabase) return;
     void supabase.auth.getSession().then(({ data }) => setShow(!data.session));
     const { data } = supabase.auth.onAuthStateChange((_event, session) => setShow(!session));
