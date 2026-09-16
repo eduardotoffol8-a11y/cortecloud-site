@@ -9,14 +9,12 @@ async function ensureConstructionWorker() {
   const registrations = await navigator.serviceWorker.getRegistrations();
   const rootScope = `${window.location.origin}/`;
 
-  await Promise.all(registrations.map(async (registration) => {
-    if (registration.scope !== rootScope) return;
-    const script = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || "";
-    if (script.endsWith("/sw.js")) await registration.unregister();
-  }));
+  await Promise.all(registrations
+    .filter((registration) => registration.scope === rootScope)
+    .map((registration) => registration.unregister()));
 
   await navigator.serviceWorker.register("/apps/obra-civil/sw.js", {
-    scope: "/apps/obra-civil/",
+    scope: "/apps/obra-civil",
     updateViaCache: "none",
   });
 }
