@@ -1,7 +1,6 @@
-const CACHE = "orcamovel-v13";
+const CACHE = "orcamovel-v14";
 const BRAND_ICON_CACHE = "orcamovel-brand-icon-v2";
 const CORE = [
-  "/",
   "/apps/moveis",
   "/manifest.webmanifest",
   "/orcamovel-official-192.png",
@@ -29,6 +28,22 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // OrçaObra has its own worker, manifest, route and offline fallback. The legacy
+  // OrçaMóvel worker may still exist with root scope on devices that installed an
+  // older version, so it must never answer OrçaObra requests.
+  if (
+    url.pathname.startsWith("/apps/obra-civil")
+    || url.pathname === "/orcaobra-manifest.webmanifest"
+    || url.pathname.startsWith("/orcaobra-")
+  ) return;
+
+  // The product hub is not part of the OrçaMóvel PWA. Always load it from the
+  // network so an old cached shell cannot render without its current CSS/JS.
+  if (event.request.mode === "navigate" && url.pathname === "/") {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   if (url.pathname === "/manifest.webmanifest") {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
@@ -52,16 +67,17 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
       try {
         const response = await fetch(event.request);
-        if (response.ok) {
+        if (response.ok && url.pathname.startsWith("/apps/moveis")) {
           const cache = await caches.open(CACHE);
           await cache.put(event.request, response.clone());
         }
         return response;
       } catch {
+        if (!url.pathname.startsWith("/apps/moveis")) return Response.error();
         const cache = await caches.open(CACHE);
         return (await cache.match(event.request, { ignoreSearch: true }))
           || (await cache.match("/apps/moveis"))
-          || (await cache.match("/"));
+          || Response.error();
       }
     })());
     return;
