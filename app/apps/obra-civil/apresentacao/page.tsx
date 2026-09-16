@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, FileText, Layers3, Monitor, WalletCards } from "lucide-react";
+import { PublicTestimonials } from "@/components/public-testimonials";
 import styles from "./presentation.module.css";
 
 export const metadata: Metadata = {
@@ -97,6 +98,8 @@ export default function ConstructionPresentationPage() {
         </div>
         <div className={styles.actions} style={{justifyContent:'center',marginTop:24}}><Link href="/apps/obra-civil" className={styles.primary}>Começar 30 dias grátis <ArrowRight size={17}/></Link></div>
       </section>
+
+      <PublicTestimonials productId="obra-civil" productName="OrçaObra" audienceLabel="profissionais da construção que usam o aplicativo" />
 
       <section className={`${styles.container} ${styles.section}`}>
         <div className={styles.sectionHead}><p className={styles.eyebrow}>DÚVIDAS FREQUENTES</p><h2>Antes de começar.</h2></div>
