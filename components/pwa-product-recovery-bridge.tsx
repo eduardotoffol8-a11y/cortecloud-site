@@ -20,13 +20,13 @@ export function PwaProductRecoveryBridge() {
     const movelInstalled = window.localStorage.getItem(MOVEL_INSTALLED_KEY) === "true";
 
     const destination = lastProduct === "obra"
-      ? "/apps/obra-civil/"
+      ? "/apps/obra-civil"
       : lastProduct === "moveis"
-        ? "/apps/moveis/"
+        ? "/apps/moveis"
         : obraInstalled && !movelInstalled
-          ? "/apps/obra-civil/"
+          ? "/apps/obra-civil"
           : movelInstalled && !obraInstalled
-            ? "/apps/moveis/"
+            ? "/apps/moveis"
             : "";
 
     if (destination) window.location.replace(destination);
