@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   applicationName: "OrçaObra",
   title: { default: "OrçaObra | Orçamentos profissionais", template: "%s | OrçaObra" },
   description: "Orçamentos profissionais para construção e reformas.",
-  manifest: "/orcaobra-manifest.webmanifest?v=20260916-3",
+  manifest: "/orcaobra-manifest.webmanifest?v=20260916-4",
   icons: {
     icon: [{ url: "/orcaobra-logo.png", type: "image/png" }],
     apple: [{ url: "/orcaobra-logo.png", type: "image/png" }],
