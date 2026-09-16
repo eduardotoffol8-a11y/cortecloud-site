@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Orçamentos profissionais para construção e reformas.",
   manifest: "/orcaobra-manifest.webmanifest?v=20260916-4",
   icons: {
-    icon: [{ url: "/orcaobra-logo.png", type: "image/png" }],
+    icon: [{ url: "/orcaobra-pwa-icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/orcaobra-logo.png", type: "image/png" }],
   },
 };
