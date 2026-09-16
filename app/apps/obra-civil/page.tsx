@@ -5,9 +5,9 @@ export const metadata = {
   title: "OrçaObra | Orçamentos profissionais para construção",
   description: "Organize obras, serviços, custos e propostas profissionais de construção.",
   applicationName: "OrçaObra",
-  manifest: "/orcaobra-manifest.webmanifest?v=20260916-4",
+  manifest: "/orcaobra-manifest.webmanifest?v=20260916-6",
   icons: {
-    icon: "/orcaobra-logo.png",
+    icon: "/api/orcaobra-icon/192?v=20260916-6",
     apple: "/orcaobra-logo.png",
   },
 };
