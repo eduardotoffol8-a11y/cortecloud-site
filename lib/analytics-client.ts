@@ -1,4 +1,10 @@
-export type OrcamovelAnalyticsEvent = "site_view" | "app_open" | "plans_open" | "checkout_started";
+export type OrcamovelAnalyticsEvent =
+  | "site_view"
+  | "app_open"
+  | "workspace_open"
+  | "site_plans_interest"
+  | "plans_open"
+  | "checkout_started";
 
 const SESSION_KEY = "orcamovel.analytics.session.v1";
 const VISITOR_KEY = "orcamovel.analytics.visitor.v1";
@@ -21,8 +27,7 @@ export function getAnalyticsSessionId() {
   }
 }
 
-// This is a random browser identifier, never an e-mail or a profile field.
-// It lets the public funnel avoid recounting a visitor who opens a new tab.
+// Random browser identifier only. It never contains an e-mail or profile field.
 export function getAnalyticsVisitorId() {
   try {
     const existing = window.localStorage.getItem(VISITOR_KEY);
