@@ -2,6 +2,7 @@
 
 import { Star } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { ProductId } from "@/lib/product-catalog";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import styles from "./testimonials.module.css";
 
@@ -14,27 +15,27 @@ function Stars({ rating, muted = false }: { rating: number; muted?: boolean }) {
   </span>;
 }
 
-export function PublicTestimonials() {
+export function PublicTestimonials({ productId = "moveis", productName = "OrçaMóvel", audienceLabel = "profissionais que usam o aplicativo" }: { productId?: ProductId; productName?: string; audienceLabel?: string }) {
   const [summary, setSummary] = useState<Summary | null>(null);
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
-    void supabase.rpc("get_public_orcamovel_feedback_summary").then(({ data }) => {
+    void supabase.rpc("get_public_product_feedback_summary", { p_product_id: productId }).then(({ data }) => {
       if (data && typeof data === "object") setSummary(data as Summary);
     });
-  }, []);
+  }, [productId]);
 
   if (!summary?.total) return null;
 
   return (
-    <section className={styles.section} aria-labelledby="avaliacoes-title">
+    <section className={styles.section} aria-labelledby={`${productId}-avaliacoes-title`}>
       <div className={styles.container}>
         <header className={styles.heading}>
           <div>
             <p className={styles.eyebrow}>AVALIAÇÕES DE QUEM JÁ USA</p>
-            <h2 id="avaliacoes-title">Experiências reais com o OrçaMóvel.</h2>
-            <p>Opiniões compartilhadas por marceneiros que usam o aplicativo na rotina.</p>
+            <h2 id={`${productId}-avaliacoes-title`}>Experiências reais com o {productName}.</h2>
+            <p>Opiniões compartilhadas por {audienceLabel}.</p>
           </div>
         </header>
 
@@ -58,7 +59,7 @@ export function PublicTestimonials() {
           </aside>
 
           <div className={styles.reviews}>
-            <div className={styles.reviewTop}><h3>O que dizem sobre o OrçaMóvel</h3><span>{summary.total} opiniões verificadas</span></div>
+            <div className={styles.reviewTop}><h3>O que dizem sobre o {productName}</h3><span>{summary.total} opiniões aprovadas</span></div>
             <div className={styles.reviewList}>
               {summary.reviews.map((testimonial, index) => (
                 <article className={styles.review} key={testimonial.created_at + "-" + index}>
