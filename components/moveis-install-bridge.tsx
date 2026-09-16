@@ -11,7 +11,7 @@ export function MoveisInstallBridge() {
         const rootScope = `${window.location.origin}/`;
         await Promise.all(registrations.filter((registration) => registration.scope === rootScope).map((registration) => registration.unregister()));
         await navigator.serviceWorker.register("/apps/moveis/sw.js", {
-          scope: "/apps/moveis/",
+          scope: "/apps/moveis",
           updateViaCache: "none",
         });
       } catch {
