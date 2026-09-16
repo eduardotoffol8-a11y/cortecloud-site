@@ -7,10 +7,10 @@ import { MoveisInstallBridge } from "@/components/moveis-install-bridge";
 export const metadata = {
   title: "OrçaMóvel | Orçamentos profissionais para marcenaria",
   description: "Crie, organize e envie propostas profissionais de móveis sob medida pelo celular ou computador.",
-  manifest: "/manifest.webmanifest?v=20260916-5",
+  manifest: "/manifest.webmanifest?v=20260916-6",
   icons: {
-    icon: "/orcamovel-official-512.png",
-    apple: "/orcamovel-install-192-v2.png",
+    icon: "/orcamovel-install-192-v2.png?v=20260916-6",
+    apple: "/orcamovel-install-192-v2.png?v=20260916-6",
   },
 };
 
