@@ -1,13 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-const allowedEvents = new Set([
-  "site_view",
-  "app_open",
-  "workspace_open",
-  "site_plans_interest",
-  "plans_open",
-  "checkout_started",
-]);
+// This public endpoint only accepts anonymous acquisition events. Authenticated
+// commercial stages are recorded directly through the signed-in Supabase client.
+const allowedEvents = new Set(["site_view", "app_open", "site_plans_interest"]);
 const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dswqqmgadqwvisygnuib.supabase.co";
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4tv8A3SqS_9KC_Q8nykwlA_ZtX1dFtl";
 
