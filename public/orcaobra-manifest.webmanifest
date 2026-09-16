@@ -3,7 +3,7 @@
   "short_name": "OrçaObra",
   "description": "Orçamentos profissionais para construção e reformas no celular ou computador.",
   "id": "/apps/obra-civil/",
-  "start_url": "/apps/obra-civil/",
+  "start_url": "/apps/obra-civil/?pwa=obra",
   "scope": "/apps/obra-civil/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
