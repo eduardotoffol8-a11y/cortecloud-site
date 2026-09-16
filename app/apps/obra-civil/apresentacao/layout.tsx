@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   applicationName: "OrçaObra",
-  manifest: "/orcaobra-manifest.webmanifest?v=20260916-2",
+  manifest: "/orcaobra-manifest.webmanifest?v=20260916-6",
   icons: {
-    icon: "/orcaobra-logo.png",
+    icon: "/api/orcaobra-icon/192?v=20260916-6",
     apple: "/orcaobra-logo.png",
   },
 };
