@@ -15,8 +15,10 @@ export function AuthReturnBridge() {
 
     setActive(true);
     const savedDestination = window.localStorage.getItem("orcamento.auth-return");
-    const destination = savedDestination === "/apps/obra-civil" ? "/apps/obra-civil" : "/apps/moveis";
-    const productName = destination === "/apps/obra-civil" ? "OrçaObra" : "OrçaMóvel";
+    const lastProduct = window.localStorage.getItem("orcamento.pwa-last-product");
+    const destination = savedDestination === "/apps/obra-civil" || (!savedDestination && lastProduct === "obra")
+      ? "/apps/obra-civil"
+      : "/apps/moveis";
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       window.location.replace(destination);
